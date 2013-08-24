@@ -35,6 +35,40 @@ var game = (function () {
         }
         ctx.drawImage(sprites.player, player.x*64, player.y*64, 64, 64);
         requestAnimationFrame(repaint);
+    };
+
+    var keydown = function(e) {
+        switch (e.keyCode) {
+            case 37:
+                ws.send("left");
+                break;
+            case 38:
+                ws.send("up");
+                break;
+            case 39:
+                ws.send("right");
+                break;
+            case 40:
+                ws.send("down");
+                break;
+        };
+    };
+
+    var keyup = function(e) {
+        switch (e.keyCode) {
+            case 37:
+                ws.send("!left");
+                break;
+            case 38:
+                ws.send("!up");
+                break;
+            case 39:
+                ws.send("!right");
+                break;
+            case 40:
+                ws.send("!down");
+                break;
+        };
     }
 
     var message = function(msg) {
@@ -62,7 +96,7 @@ var game = (function () {
                 }
                 break;
             case States.PLAYER_WAIT:
-                var player_pattern = /^player:\s+(\d+)\s+(\d+)$/;
+                var player_pattern = /^player:\s+([\d.]+)\s+([\d.]+)$/;
                 if (result = player_pattern.exec(msg)) {
                     console.log(result);
                     player.x = parseInt(result[1]);
@@ -71,6 +105,9 @@ var game = (function () {
                     state = States.STARTED;
                     // start painting!
                     requestAnimationFrame(repaint);
+                    // start paying attention to keyboard events
+                    $(document).keydown(keydown);
+                    $(document).keyup(keyup);
                 } else {
                     throw "wtf?";
                 }
@@ -83,9 +120,10 @@ var game = (function () {
     }
 
     return {
-        start: function(host, port, cookie, canvas_context) {
+        start: function(host, port, game_id, player_id, canvas_context) {
                    ctx = canvas_context;
-                   ws = new WebSocket("ws://" + host + ":" + port + "/play-game/" + cookie);
+                   ws = new WebSocket("ws://" + host + ":" + port
+                           + "/play-game/" + game_id + "/" + player_id);
                    ws.onopen = function() {
                        ws.send("ready");
                        state = States.MAZE_WAIT;

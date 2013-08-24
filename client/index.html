@@ -20,7 +20,8 @@
                                                 'success': function(join_data) {
                                                         game.start(join_data.host,
                                                                    join_data.port,
-                                                                   join_data.cookie,
+                                                                   join_data.game_id,
+                                                                   join_data.player_id,
                                                                    $("#viewport")[0].getContext("2d"));
                                                 }
                                         });
