@@ -4,7 +4,6 @@ var game = (function () {
     var States = {
         UNOPENED: 0,
         MAZE_WAIT: 1,
-        PLAYER_WAIT: 2,
         STARTED: 3
     };
     var state = States.UNOPENED;
@@ -26,6 +25,7 @@ var game = (function () {
     sprites.player.src = "player.png";
 
     var repaint = function(timestamp) {
+        ctx.clearRect(0, 0, 640, 480);
         for (var x = 0; x < maze.width; ++x) {
             for (var y = 0; y < maze.height; ++y) {
                 if (maze.walls[x][y]) {
@@ -34,7 +34,7 @@ var game = (function () {
             }
         }
         ctx.drawImage(sprites.player, player.x*64, player.y*64, 32, 32);
-        requestAnimationFrame(repaint);
+        // requestAnimationFrame(repaint);
     };
 
     var keydown = function(e) {
@@ -89,19 +89,7 @@ var game = (function () {
                         }
                     }
                     console.log(maze.walls);
-                    ws.send("maze_ack");
-                    state = States.PLAYER_WAIT;
-                } else {
-                    throw "wtf?";
-                }
-                break;
-            case States.PLAYER_WAIT:
-                var player_pattern = /^player:\s+([\d.]+)\s+([\d.]+)$/;
-                if (result = player_pattern.exec(msg)) {
-                    console.log(result);
-                    player.x = parseInt(result[1]);
-                    player.y = parseInt(result[2]);
-                    ws.send("player_ack");
+                    ws.send("ack");
                     state = States.STARTED;
                     // start painting!
                     requestAnimationFrame(repaint);
@@ -113,6 +101,15 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
+                var player_pattern = /^player:\s+([\d.]+)\s+([\d.]+)$/;
+                if (result = player_pattern.exec(msg)) {
+                    ws.send("ack");
+                    player.x = parseFloat(result[1]);
+                    player.y = parseFloat(result[2]);
+                    requestAnimationFrame(repaint);
+                } else {
+                    throw "wtf?";
+                }
                 break;
             default:
                 throw "wtf?";

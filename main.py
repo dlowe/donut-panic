@@ -15,7 +15,19 @@ class Index(tornado.web.RequestHandler):
 GAMES = {}
 
 def game_tick(game_id):
-    pass
+    ## move everything
+    for player in GAMES[game_id]["players"].values():
+        if player["right?"]:
+            player["x"] += 0.03
+        if player["up?"]:
+            player["y"] -= 0.03
+        if player["left?"]:
+            player["x"] -= 0.03
+        if player["down?"]:
+            player["y"] += 0.03
+    ## send updates
+    for player in GAMES[game_id]["players"].values():
+        player["socket"].maybe_send_player()
 
 class NewGame(tornado.web.RequestHandler):
     def post(self):
@@ -66,6 +78,7 @@ class JoinGame(tornado.web.RequestHandler):
             "down?": False,
             "left?": False,
             "right?": False,
+            "socket": None,
         }
         self.set_header("Content-Type", "application/json")
         self.write({
@@ -79,41 +92,41 @@ class PlayGame(tornado.websocket.WebSocketHandler):
     class States:
         OPEN = 0
         MAZE_SENT = 1
-        PLAYER_SENT = 2
-        STARTED = 3
+        ACK_WAIT = 2
+        ACKED = 3
 
     def open(self, game_id, player_id):
         self.game_id = game_id
         self.player_id = player_id
         self.state = self.States.OPEN
+        GAMES[game_id]["players"][player_id]["socket"] = self
         print "[%s/%s] new connection" % (self.game_id, self.player_id)
 
+    def maybe_send_player(self):
+        if self.state == self.States.ACKED:
+            self.write_message('player: %f %f' % (GAMES[self.game_id]["players"][self.player_id]["x"],
+                GAMES[self.game_id]["players"][self.player_id]["y"]))
+            self.state = self.States.ACK_WAIT
+
     def on_message(self, message):
-        print "[%s/%s] new message %s" % (self.game_id, self.player_id, message)
+        # print "[%s/%s] new message %s" % (self.game_id, self.player_id, message)
         if self.state == self.States.OPEN:
             if message == 'ready':
                 self.write_message('maze: %d %d %s' % (GAMES[self.game_id]["width"],
                     GAMES[self.game_id]["height"],
                     GAMES[self.game_id]["maze"]))
                 self.state = self.States.MAZE_SENT
-            else:
-                raise Exception('wtf?')
         elif self.state == self.States.MAZE_SENT:
-            if message == 'maze_ack':
-                self.write_message('player: %f %f' % (GAMES[self.game_id]["players"][self.player_id]["x"],
-                    GAMES[self.game_id]["players"][self.player_id]["y"]))
-                self.state = self.States.PLAYER_SENT
-            else:
-                raise Exception('wtf?')
-        elif self.state == self.States.PLAYER_SENT:
-            if message == 'player_ack':
-                self.state = self.States.STARTED
+            if message == 'ack':
+                self.state = self.States.ACKED
                 if not GAMES[self.game_id]["started"]:
-                    tornado.ioloop.PeriodicCallback(GAMES[self.game_id]["tick"], 50).start()
-                    GAMES[self.game_id]["started"]
-            else:
-                raise Exception('wtf?')
-        elif self.state == self.States.STARTED:
+                    tornado.ioloop.PeriodicCallback(GAMES[self.game_id]["tick"], 16).start()
+                    GAMES[self.game_id]["started"] = True
+        elif self.state == self.States.ACK_WAIT:
+            if message == 'ack':
+                self.state = self.States.ACKED
+
+        if self.state == self.States.ACK_WAIT or self.state == self.States.ACKED:
             if message == 'right':
                 GAMES[self.game_id]["players"][self.player_id]["right?"] = True
             if message == '!right':
@@ -130,8 +143,6 @@ class PlayGame(tornado.websocket.WebSocketHandler):
                 GAMES[self.game_id]["players"][self.player_id]["up?"] = True
             if message == '!up':
                 GAMES[self.game_id]["players"][self.player_id]["up?"] = False
-        else:
-            raise Exception('wtf?')
 
 if __name__ == "__main__":
     handlers = [
