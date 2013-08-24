@@ -2,7 +2,9 @@
 <html>
         <head>
         </head>
-        <body>
+        <body style="background-color:black;">
+                <canvas id="viewport" width=640 height=480 style="background-color:white; width:640px; height:480px; padding: 0; margin: 0px auto; display: block;">
+                </div>
         </body>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
         <script src="game.js"></script>
@@ -18,7 +20,8 @@
                                                 'success': function(join_data) {
                                                         game.start(join_data.host,
                                                                    join_data.port,
-                                                                   join_data.cookie);
+                                                                   join_data.cookie,
+                                                                   $("#viewport")[0].getContext("2d"));
                                                 }
                                         });
                                 }
