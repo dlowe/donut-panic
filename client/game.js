@@ -33,7 +33,7 @@ var game = (function () {
                 }
             }
         }
-        ctx.drawImage(sprites.player, player.x*64, player.y*64, 64, 64);
+        ctx.drawImage(sprites.player, player.x*64, player.y*64, 32, 32);
         requestAnimationFrame(repaint);
     };
 
