@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+        <head>
+        </head>
+        <body>
+        </body>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script src="game.js"></script>
+        <script language="javascript">
+                $(function() {
+                        $.ajax({
+                                'url': '/api/new-game',
+                                'type': 'POST',
+                                'success': function(new_data) {
+                                        $.ajax({
+                                                'url': '/api/join-game/' + new_data.game_id,
+                                                'type': 'POST',
+                                                'success': function(join_data) {
+                                                        game.start(join_data.host,
+                                                                   join_data.port,
+                                                                   join_data.cookie);
+                                                }
+                                        });
+                                }
+                        });
+                });
+        </script>
+</body>
+</html>
