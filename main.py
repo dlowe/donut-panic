@@ -14,12 +14,17 @@ class Index(tornado.web.RequestHandler):
 
 GAMES = {}
 
+def game_tick(game_id):
+    pass
+
 class NewGame(tornado.web.RequestHandler):
     def post(self):
         print "new game"
         game_id = "testing" ## XXX: randomize
         GAMES[game_id] = {
             "players": {},
+            "tick": lambda: game_tick(game_id),
+            "started": False,
             "width": 20,
             "height": 20,
             "maze": "".join( ## XXX: randomize
@@ -55,8 +60,12 @@ class JoinGame(tornado.web.RequestHandler):
         player_id = "cookie" ## XXX: randomize
         GAMES[game_id]["players"][player_id] = {
             ## XXX: randomize
-            "x": 2,
-            "y": 2
+            "x": 2.0,
+            "y": 2.0,
+            "up?": False,
+            "down?": False,
+            "left?": False,
+            "right?": False,
         }
         self.set_header("Content-Type", "application/json")
         self.write({
@@ -99,10 +108,28 @@ class PlayGame(tornado.websocket.WebSocketHandler):
         elif self.state == self.States.PLAYER_SENT:
             if message == 'player_ack':
                 self.state = self.States.STARTED
+                if not GAMES[self.game_id]["started"]:
+                    tornado.ioloop.PeriodicCallback(GAMES[self.game_id]["tick"], 50).start()
+                    GAMES[self.game_id]["started"]
             else:
                 raise Exception('wtf?')
         elif self.state == self.States.STARTED:
-            self.write_message(u"You said: " + message)
+            if message == 'right':
+                GAMES[self.game_id]["players"][self.player_id]["right?"] = True
+            if message == '!right':
+                GAMES[self.game_id]["players"][self.player_id]["right?"] = False
+            if message == 'left':
+                GAMES[self.game_id]["players"][self.player_id]["left?"] = True
+            if message == '!left':
+                GAMES[self.game_id]["players"][self.player_id]["left?"] = False
+            if message == 'down':
+                GAMES[self.game_id]["players"][self.player_id]["down?"] = True
+            if message == '!down':
+                GAMES[self.game_id]["players"][self.player_id]["down?"] = False
+            if message == 'up':
+                GAMES[self.game_id]["players"][self.player_id]["up?"] = True
+            if message == '!up':
+                GAMES[self.game_id]["players"][self.player_id]["up?"] = False
         else:
             raise Exception('wtf?')
 
