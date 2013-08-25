@@ -55,7 +55,7 @@ class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
-        self.started = False
+        self.loop = None
         self.width = 15
         self.height = 14
         ## XXX: randomize
@@ -123,6 +123,7 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         MAZE_SENT = 1
         ACK_WAIT = 2
         ACKED = 3
+        CLOSED = 4
 
     def open(self, game_id, player_id):
         self.game_id = game_id
@@ -133,6 +134,11 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         self.state = self.States.OPEN
         self.player.socket = self
         print "[%s/%s] new connection" % (self.game_id, self.player_id)
+
+    def on_close(self):
+        self.game.loop.stop()
+        self.game.loop = None
+        self.state = self.States.CLOSED
 
     def maybe_send_player(self):
         if self.state == self.States.ACKED:
@@ -149,9 +155,9 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         elif self.state == self.States.MAZE_SENT:
             if message == 'ack':
                 self.state = self.States.ACKED
-                if not self.game.started:
-                    tornado.ioloop.PeriodicCallback(lambda: self.game.tick(), 16).start()
-                    self.game.started = True
+                if not self.game.loop:
+                    self.game.loop = tornado.ioloop.PeriodicCallback(lambda: self.game.tick(), 16)
+                    self.game.loop.start()
         elif self.state == self.States.ACK_WAIT:
             if message == 'ack':
                 self.state = self.States.ACKED
