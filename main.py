@@ -169,31 +169,7 @@ class Player(MoveMixin):
         self.socket = None
 
     def tick(self):
-        x = self.x
-        if self.right:
-            x = self.x + self.speed
-            for y in (self.y, self.y + self.height):
-                if self.game.walls[int(y)][int(x + self.width)]:
-                    x = int(x + self.width) - self.width - 0.01
-        elif self.left:
-            x = self.x - self.speed
-            for y in (self.y, self.y + self.height):
-                if self.game.walls[int(y)][int(x)]:
-                    x = int(x) + 1
-        self.x = x
-
-        y = self.y
-        if self.down:
-            y = self.y + self.speed
-            for x in (self.x, self.x + self.height):
-                if self.game.walls[int(y + self.height)][int(x)]:
-                    y = int(y + self.height) - self.height - 0.01
-        elif self.up:
-            y = self.y - self.speed
-            for x in (self.x, self.x + self.height):
-                if self.game.walls[int(y)][int(x)]:
-                    y = int(y) + 1
-        self.y = y
+        self.move()
 
 def within(thing, x, y):
     return ((x >= thing.x) and
