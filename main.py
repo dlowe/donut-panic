@@ -9,7 +9,6 @@ import tornado.web
 import tornado.websocket
 
 from tornado.options import define
-define("host", default="localhost", help="host", type=str)
 define("port", default=5000, help="port", type=int)
 
 GAMES = {}
@@ -196,8 +195,6 @@ class JoinGameHandler(tornado.web.RequestHandler):
         GAMES[game_id].add_player(player_id)
         self.set_header("Content-Type", "application/json")
         self.write({
-            "host": tornado.options.options.host,
-            "port": tornado.options.options.port,
             "game_id": game_id,
             "player_id": player_id
         })
