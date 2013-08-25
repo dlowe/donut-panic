@@ -116,25 +116,29 @@ class Slime(MoveMixin):
                 step = path[1]
                 sx = step[0] + 0.25
                 sy = step[1] + 0.25
-                if sx > self.x:
-                    self.right = True
-                    self.left = False
-                elif sx < self.x:
-                    self.left = True
-                    self.right = False
-                else:
-                    self.left = False
-                    self.right = False
-                if sy > self.y:
-                    self.down = True
-                    self.up = False
-                elif sy < self.y:
-                    self.up = True
-                    self.down = False
-                else:
-                    self.down = False
-                    self.up = False
-                self.move()
+            else:
+                sx = donut.x
+                sy = donut.y
+
+            if sx > self.x:
+                self.right = True
+                self.left = False
+            elif sx < self.x:
+                self.left = True
+                self.right = False
+            else:
+                self.left = False
+                self.right = False
+            if sy > self.y:
+                self.down = True
+                self.up = False
+            elif sy < self.y:
+                self.up = True
+                self.down = False
+            else:
+                self.down = False
+                self.up = False
+            self.move()
 
     def splat(self):
         self.alive = False
