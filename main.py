@@ -11,63 +11,75 @@ define("port", default=5000, help="port", type=int)
 GAMES = {}
 
 class Player:
-    def __init__(self, player_id):
+    def __init__(self, game, player_id):
+        self.game = game
         self.x = 2.0
         self.y = 2.0
-        self.width = 32
-        self.height = 32
+        self.speed = 0.03 # in blocks
+        self.width = 0.5 # in blocks
+        self.height = 0.5 # in blocks
         self.up = False
         self.down = False
         self.left = False
         self.right = False
         self.socket = None
 
+    def tick(self):
+        x = self.x
+        if self.right:
+            x = self.x + self.speed
+            for y in (self.y, self.y + self.height):
+                if self.game.walls[int(y)][int(x + self.width)]:
+                    x = int(x + self.width) - self.width - 0.01
+        elif self.left:
+            x = self.x - self.speed
+            for y in (self.y, self.y + self.height):
+                if self.game.walls[int(y)][int(x)]:
+                    x = int(x) + 1
+        self.x = x
+
+        y = self.y
+        if self.down:
+            y = self.y + self.speed
+            for x in (self.x, self.x + self.height):
+                if self.game.walls[int(y + self.height)][int(x)]:
+                    y = int(y + self.height) - self.height - 0.01
+        elif self.up:
+            y = self.y - self.speed
+            for x in (self.x, self.x + self.height):
+                if self.game.walls[int(y)][int(x)]:
+                    y = int(y) + 1
+        self.y = y
+
 class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
         self.started = False
-        self.width = 20
-        self.height = 20
-        self.maze = "".join( ## XXX: randomize
-                    ['xxxxxxxxxxxxxxxxxxxx',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'x                  x',
-                     'xxxxxxxxxxxxxxxxxxxx',])
+        self.width = 9
+        self.height = 4
+        ## XXX: randomize
+        self.walls = [
+                [1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,0,0,1],
+                [1,0,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1],
+        ]
+
+    def serialized_maze(self):
+        return "".join(["x" if self.walls[y][x] else " " for y in range(0, self.height) for x in range(0,self.width)])
 
     def tick(self):
         ## move everything
         for player in self.players.values():
-            if player.right:
-                player.x += 0.03
-            if player.up:
-                player.y -= 0.03
-            if player.left:
-                player.x -= 0.03
-            if player.down:
-                player.y += 0.03
+            player.tick()
+
         ## send updates
         for player in self.players.values():
             player.socket.maybe_send_player()
 
     def add_player(self, player_id):
-        self.players[player_id] = Player(player_id)
+        self.players[player_id] = Player(self, player_id)
 
     def get_player(self, player_id):
         return self.players[player_id]
@@ -122,7 +134,7 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         if self.state == self.States.OPEN:
             if message == 'ready':
                 self.write_message('maze: %d %d %s' % (self.game.width,
-                    self.game.height, self.game.maze))
+                    self.game.height, self.game.serialized_maze()))
                 self.state = self.States.MAZE_SENT
         elif self.state == self.States.MAZE_SENT:
             if message == 'ack':

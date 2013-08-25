@@ -101,7 +101,7 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
-                var player_pattern = /^player:\s+([\d.]+)\s+([\d.]+)$/;
+                var player_pattern = /^player:\s+(-?[\d.]+)\s+(-?[\d.]+)$/;
                 if (result = player_pattern.exec(msg)) {
                     ws.send("ack");
                     player.x = parseFloat(result[1]);
