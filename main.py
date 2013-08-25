@@ -225,8 +225,8 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 19
-        self.height = 15
+        self.width = 39
+        self.height = 35
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
