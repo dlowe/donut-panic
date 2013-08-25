@@ -121,7 +121,7 @@ class Game:
     def serialized_state(self, player_id):
         return "<%s>" % " ".join(
             ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
-                p.x, p.y, p.facing) for p in self.players.values()] +
+                p.x, p.y, p.facing) for p in self.players.values() if p.socket is not None] +
             ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
     def serialized_maze(self):
@@ -132,6 +132,14 @@ class Game:
         if self.last_spawn is None or ((now - self.last_spawn).total_seconds() >= 10):
             self.monsters.append(Slime(self))
             self.last_spawn = now
+
+    def maybe_stop(self):
+        for player in self.players.values():
+            if player.socket is not None:
+                return
+        self.loop.stop()
+        self.loop = None
+        print "stop game %s" % self.game_id
 
     def random_empty_spot(self):
         x = None
@@ -161,7 +169,7 @@ class Game:
 
         ## send updates
         for player in self.players.values():
-            if player.socket:
+            if player.socket is not None:
                 player.socket.maybe_send_player()
 
     def add_player(self, player_id):
@@ -172,8 +180,8 @@ class Game:
 
 class NewGameHandler(tornado.web.RequestHandler):
     def post(self):
-        print "new game"
         game_id = "testing" ## XXX: randomize
+        print "new game %s" % game_id
         if not game_id in GAMES:
             GAMES[game_id] = Game(game_id)
         self.set_header("Content-Type", "application/json")
@@ -213,9 +221,10 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         print "[%s/%s] new connection" % (self.game_id, self.player_id)
 
     def on_close(self):
-        self.game.loop.stop()
-        self.game.loop = None
         self.state = self.States.CLOSED
+        print "[%s/%s] close connection" % (self.game_id, self.player_id)
+        self.player.socket = None
+        self.game.maybe_stop()
 
     def maybe_send_player(self):
         if self.state == self.States.ACKED:

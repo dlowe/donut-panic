@@ -1,4 +1,4 @@
-bug: game.loop is stopped by the first player to leave
+bug: --host should not be needed
 add donuts
 make slimes try to eat 'em
 spawn points
@@ -6,3 +6,7 @@ slime "facing"
 splash screen
 "new game" with random name
 functional "join existing"
+despawn splats
+splat sounds
+background music
+random mazes
