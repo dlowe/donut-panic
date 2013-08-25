@@ -15,27 +15,40 @@ var game = (function () {
     var player = {
         x: null,
         y: null,
+        facing: null
     };
     var entities = null;
     var sprites = {
         "wall": new Image(),
-        "player": new Image(),
+        "floor": new Image(),
+        "player": {
+            "up": new Image(),
+            "down": new Image(),
+            "left": new Image(),
+            "right": new Image()
+        }
     }
     sprites.wall.src = "wall.png";
-    sprites.player.src = "player.png";
+    sprites.floor.src = "floor.png";
+    sprites.player.up.src = "player_up.png";
+    sprites.player.down.src = "player_down.png";
+    sprites.player.left.src = "player_left.png";
+    sprites.player.right.src = "player_right.png";
 
     var repaint = function(timestamp) {
-        var off_x = Math.max(0, Math.min(player.x*64 - 336, maze.width*64 - 640));
-        var off_y = Math.max(0, Math.min(player.y*64 - 256, maze.height*64 - 480));
+        var off_x = Math.max(0, Math.min(player.x*32 - 336, maze.width*32 - 640));
+        var off_y = Math.max(0, Math.min(player.y*32 - 256, maze.height*32 - 480));
         ctx.clearRect(0, 0, 640, 480);
         for (var x = 0; x < maze.width; ++x) {
             for (var y = 0; y < maze.height; ++y) {
                 if (maze.walls[x][y]) {
-                    ctx.drawImage(sprites.wall, x*64 - off_x, y*64 - off_y, 64, 64);
+                    ctx.drawImage(sprites.wall, x*32 - off_x, y*32 - off_y, 32, 32);
+                } else {
+                    ctx.drawImage(sprites.floor, x*32 - off_x, y*32 - off_y, 32, 32);
                 }
             }
         }
-        ctx.drawImage(sprites.player, player.x*64 - off_x, player.y*64 - off_y, 32, 32);
+        ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
     };
 
     var keydown = function(e) {
@@ -100,11 +113,12 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
-                var player_pattern = /^player:\s+(-?[\d.]+)\s+(-?[\d.]+)$/;
+                var player_pattern = /^player:\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(.*)$/;
                 if (result = player_pattern.exec(msg)) {
                     ws.send("ack");
                     player.x = parseFloat(result[1]);
                     player.y = parseFloat(result[2]);
+                    player.facing = result[3];
                     requestAnimationFrame(repaint);
                 } else {
                     throw "wtf?";

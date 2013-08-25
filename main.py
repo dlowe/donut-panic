@@ -15,6 +15,7 @@ class Player:
         self.game = game
         self.x = 2.0
         self.y = 2.0
+        self.facing = "down"
         self.speed = 0.05 # in blocks
         self.width = 0.5 # in blocks
         self.height = 0.5 # in blocks
@@ -142,7 +143,7 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
 
     def maybe_send_player(self):
         if self.state == self.States.ACKED:
-            self.write_message('player: %f %f' % (self.player.x, self.player.y))
+            self.write_message('player: %f %f %s' % (self.player.x, self.player.y, self.player.facing))
             self.state = self.States.ACK_WAIT
 
     def on_message(self, message):
@@ -165,18 +166,22 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
         if self.state == self.States.ACK_WAIT or self.state == self.States.ACKED:
             if message == 'right':
                 self.player.right = True
+                self.player.facing = "right"
             if message == '!right':
                 self.player.right = False
             if message == 'left':
                 self.player.left = True
+                self.player.facing = "left"
             if message == '!left':
                 self.player.left = False
             if message == 'down':
                 self.player.down = True
+                self.player.facing = "down"
             if message == '!down':
                 self.player.down = False
             if message == 'up':
                 self.player.up = True
+                self.player.facing = "up"
             if message == '!up':
                 self.player.up = False
 
