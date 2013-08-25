@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import math
 import random
 import uuid
 
@@ -15,21 +16,125 @@ define("port", default=5000, help="port", type=int)
 
 GAMES = {}
 
-class Slime:
+def distance(a, b):
+    return math.sqrt(((b[0] - a[0]) ** 2) + ((b[1] - a[1]) ** 2))
+
+def astar(start, goal, maze):
+    closed = set()
+    todo = set([start])
+    came_from = {}
+
+    def path_to(node):
+        if node in came_from:
+            return path_to(came_from[node]) + [node]
+        else:
+            return [node]
+
+    g_score = {}
+    g_score[start] = 0
+
+    f_score = {}
+    f_score[start] = g_score[start] + distance(start, goal)
+
+    while todo:
+        current = sorted(todo, cmp=lambda x,y: cmp(f_score[x], f_score[y]))[0]
+        if current == goal:
+            return path_to(goal)
+
+        todo.remove(current)
+        closed.add(current)
+        for dx,dy in [[0,1], [0,-1], [1,0], [-1,0]]:
+            nx = current[0] + dx
+            ny = current[1] + dy
+            neighbor = (nx, ny)
+            if 0 <= nx < len(maze[0]) and 0 <= ny < len(maze) and not maze[ny][nx]:
+                tentative_g_score = g_score[current] + 1
+                if neighbor in closed and tentative_g_score >= g_score[neighbor]:
+                    continue
+
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g_score
+                f_score[neighbor] = g_score[neighbor] + distance(neighbor, goal)
+
+                if not neighbor in todo:
+                    todo.add(neighbor)
+
+    return None
+
+class MoveMixin:
+    def move(self):
+        x = self.x
+        if self.right:
+            x = self.x + self.speed
+            for y in (self.y, self.y + self.height):
+                if self.game.walls[int(y)][int(x + self.width)]:
+                    x = int(x + self.width) - self.width - 0.01
+        elif self.left:
+            x = self.x - self.speed
+            for y in (self.y, self.y + self.height):
+                if self.game.walls[int(y)][int(x)]:
+                    x = int(x) + 1
+        self.x = x
+
+        y = self.y
+        if self.down:
+            y = self.y + self.speed
+            for x in (self.x, self.x + self.height):
+                if self.game.walls[int(y + self.height)][int(x)]:
+                    y = int(y + self.height) - self.height - 0.01
+        elif self.up:
+            y = self.y - self.speed
+            for x in (self.x, self.x + self.height):
+                if self.game.walls[int(y)][int(x)]:
+                    y = int(y) + 1
+        self.y = y
+
+class Slime(MoveMixin):
     def __init__(self, game):
         self.game = game
         self.name = "slime"
         self.x, self.y = self.game.random_empty_spot()
+        self.objective_donut = random.randrange(0, len(self.game.donuts))
         self.x += 0.25
         self.y += 0.25
+        self.speed = 0.01
         self.width = 0.5 # blocks
         self.height = 0.5 # blocks
         self.facing = "down"
+        self.left = False
+        self.right = False
+        self.up = False
+        self.down = False
         self.alive = True
         self.despawn_at = None
 
     def tick(self):
-        pass
+        if self.alive:
+            donut = self.game.donuts[self.objective_donut]
+            path = astar((int(self.x), int(self.y)), (int(donut.x), int(donut.y)), self.game.walls)
+            if len(path) >= 2:
+                step = path[1]
+                sx = step[0] + 0.25
+                sy = step[1] + 0.25
+                if sx > self.x:
+                    self.right = True
+                    self.left = False
+                elif sx < self.x:
+                    self.left = True
+                    self.right = False
+                else:
+                    self.left = False
+                    self.right = False
+                if sy > self.y:
+                    self.down = True
+                    self.up = False
+                elif sy < self.y:
+                    self.up = True
+                    self.down = False
+                else:
+                    self.down = False
+                    self.up = False
+                self.move()
 
     def splat(self):
         self.alive = False
@@ -39,7 +144,7 @@ class Slime:
     def should_despawn(self):
         return (self.despawn_at is not None) and (self.despawn_at <= datetime.datetime.now())
 
-class Player:
+class Player(MoveMixin):
     def __init__(self, game, player_id):
         self.game = game
         self.player_id = player_id
@@ -128,8 +233,8 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 23
-        self.height = 17
+        self.width = 19
+        self.height = 15
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
