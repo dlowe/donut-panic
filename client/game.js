@@ -18,6 +18,7 @@ var game = (function () {
         facing: null
     };
     var monsters = [];
+    var others = [];
     var sprites = {
         "wall": new Image(),
         "floor": new Image(),
@@ -74,6 +75,10 @@ var game = (function () {
             ctx.drawImage(sprites.monsters[monster.name][monster.facing], monster.x*32 - off_x, monster.y*32 - off_y, 16, 16);
         }
         ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
+        for (var i = 0; i < others.length; ++i) {
+            var other = others[i];
+            ctx.drawImage(sprites.player[other.facing], other.x*32 - off_x, other.y*32 - off_y, 16, 16);
+        }
     };
 
     var keydown = function(e) {
@@ -140,6 +145,7 @@ var game = (function () {
                 var state_pattern = /^state:\s*<(.*)>$/;
                 if (result = state_pattern.exec(msg)) {
                     var packets = result[1].split(" ");
+                    others = [];
                     monsters = [];
                     for (var i = 0; i < packets.length; ++i) {
                         var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),(.*)\)$/;
@@ -157,6 +163,14 @@ var game = (function () {
                                 case "slime":
                                 case "splat":
                                     monsters.push({
+                                        name: type,
+                                        x: x,
+                                        y: y,
+                                        facing: facing
+                                    });
+                                    break;
+                                 default:
+                                    others.push({
                                         name: type,
                                         x: x,
                                         y: y,

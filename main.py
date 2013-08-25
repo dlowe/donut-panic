@@ -1,5 +1,6 @@
 import datetime
 import random
+import uuid
 
 import tornado.options
 import tornado.ioloop
@@ -160,7 +161,8 @@ class Game:
 
         ## send updates
         for player in self.players.values():
-            player.socket.maybe_send_player()
+            if player.socket:
+                player.socket.maybe_send_player()
 
     def add_player(self, player_id):
         self.players[player_id] = Player(self, player_id)
@@ -172,7 +174,8 @@ class NewGameHandler(tornado.web.RequestHandler):
     def post(self):
         print "new game"
         game_id = "testing" ## XXX: randomize
-        GAMES[game_id] = Game(game_id)
+        if not game_id in GAMES:
+            GAMES[game_id] = Game(game_id)
         self.set_header("Content-Type", "application/json")
         self.write({
             "game_id": game_id,
@@ -181,7 +184,7 @@ class NewGameHandler(tornado.web.RequestHandler):
 class JoinGameHandler(tornado.web.RequestHandler):
     def post(self, game_id):
         print "[%s] join game" % game_id
-        player_id = "cookie" ## XXX: randomize
+        player_id = str(uuid.uuid4())
         GAMES[game_id].add_player(player_id)
         self.set_header("Content-Type", "application/json")
         self.write({
