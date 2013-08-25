@@ -18,9 +18,12 @@ class Slime:
         self.game = game
         self.name = "slime"
         self.x, self.y = self.game.random_empty_spot()
-        self.x += 0.25;
-        self.y += 0.25;
+        self.x += 0.25
+        self.y += 0.25
+        self.width = 0.5 # blocks
+        self.height = 0.5 # blocks
         self.facing = "down"
+        self.alive = True
 
     def tick(self):
         pass
@@ -29,8 +32,9 @@ class Player:
     def __init__(self, game, player_id):
         self.game = game
         self.player_id = player_id
-        self.x = 2.0
-        self.y = 2.0
+        self.x, self.y = self.game.random_empty_spot()
+        self.x += 0.25
+        self.y += 0.25
         self.facing = "down"
         self.speed = 0.05 # in blocks
         self.width = 0.5 # in blocks
@@ -67,6 +71,18 @@ class Player:
                 if self.game.walls[int(y)][int(x)]:
                     y = int(y) + 1
         self.y = y
+
+def within(thing, x, y):
+    return ((x >= thing.x) and
+            (y >= thing.y) and
+            (x <= (thing.x + thing.width)) and
+            (y <= (thing.y + thing.height)))
+
+def collided(thing1, thing2):
+    return (within(thing1, thing2.x, thing2.y) or
+        within(thing1, thing2.x, thing2.y + thing2.height) or
+        within(thing1, thing2.x + thing2.width, thing2.y) or
+        within(thing1, thing2.x + thing2.width, thing2.y + thing2.height))
 
 class Game:
     def __init__(self, game_id):
@@ -133,6 +149,14 @@ class Game:
             player.tick()
         for monster in self.monsters:
             monster.tick()
+
+        ## squished?
+        for monster in self.monsters:
+            if monster.alive:
+                for player in self.players.values():
+                    if collided(monster, player):
+                        monster.alive = False
+                        monster.name = "splat"
 
         ## send updates
         for player in self.players.values():

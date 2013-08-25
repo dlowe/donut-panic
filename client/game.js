@@ -32,7 +32,13 @@ var game = (function () {
                 "up": new Image(),
                 "down": new Image(),
                 "left": new Image(),
-                "right": new Image(),
+                "right": new Image()
+            },
+            "splat": {
+                "up": new Image(),
+                "down": new Image(),
+                "left": new Image(),
+                "right": new Image()
             },
         }
     }
@@ -46,6 +52,10 @@ var game = (function () {
     sprites.monsters.slime.down.src = "slime.png";
     sprites.monsters.slime.left.src = "slime.png";
     sprites.monsters.slime.right.src = "slime.png";
+    sprites.monsters.splat.up.src = "splat.png";
+    sprites.monsters.splat.down.src = "splat.png";
+    sprites.monsters.splat.left.src = "splat.png";
+    sprites.monsters.splat.right.src = "splat.png";
 
     var repaint = function(timestamp) {
         var off_x = Math.max(0, Math.min(player.x*32 - 336, maze.width*32 - 640));
@@ -59,11 +69,11 @@ var game = (function () {
                 }
             }
         }
-        ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
         for (var i = 0; i < monsters.length; ++i) {
             var monster = monsters[i];
             ctx.drawImage(sprites.monsters[monster.name][monster.facing], monster.x*32 - off_x, monster.y*32 - off_y, 16, 16);
         }
+        ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
     };
 
     var keydown = function(e) {
@@ -105,7 +115,6 @@ var game = (function () {
             case States.MAZE_WAIT:
                 var maze_pattern = /^maze:\s+(\d+)\s+(\d+)\s+(.*)$/;
                 if (result = maze_pattern.exec(msg)) {
-                    console.log(result);
                     maze.width = parseInt(result[1]);
                     maze.height = parseInt(result[2]);
                     maze.walls = [];
@@ -146,8 +155,9 @@ var game = (function () {
                                     player.facing = facing;
                                     break;
                                 case "slime":
+                                case "splat":
                                     monsters.push({
-                                        name: "slime",
+                                        name: type,
                                         x: x,
                                         y: y,
                                         facing: facing
