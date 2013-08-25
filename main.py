@@ -94,7 +94,8 @@ class Slime(MoveMixin):
         self.game = game
         self.name = "slime"
         self.x, self.y = self.game.random_empty_spot()
-        self.objective_donut = random.randrange(0, len(self.game.donuts))
+        if self.game.donuts:
+            self.objective_donut = random.randrange(0, len(self.game.donuts))
         self.x += 0.25
         self.y += 0.25
         self.speed = 0.04
@@ -109,7 +110,9 @@ class Slime(MoveMixin):
         self.despawn_at = None
 
     def tick(self):
-        if self.alive:
+        if self.alive and self.game.donuts:
+            if self.objective_donut >= len(self.game.donuts):
+                self.objective_donut = random.randrange(0, len(self.game.donuts))
             donut = self.game.donuts[self.objective_donut]
             path = astar((int(self.x), int(self.y)), (int(donut.x), int(donut.y)), self.game.walls)
             if len(path) >= 2:
@@ -230,6 +233,10 @@ class Donut:
         self.width = 0.5
         self.height = 0.5
         self.eaten = False
+        self.should_despawn = False
+
+    def omnomnom(self):
+        self.should_despawn = True
 
 class Game:
     def __init__(self, game_id):
@@ -292,8 +299,16 @@ class Game:
                     if collided(monster, player):
                         monster.splat()
 
+        ## eaten?
+        for donut in self.donuts:
+            for monster in self.monsters:
+                if monster.alive:
+                    if collided(donut, monster):
+                        donut.omnomnom()
+
         ## despawn
         self.monsters = [m for m in self.monsters if not m.should_despawn()]
+        self.donuts = [d for d in self.donuts if not d.should_despawn]
 
         ## send updates
         for player in self.players.values():
