@@ -94,8 +94,7 @@ class Slime(MoveMixin):
         self.game = game
         self.name = "slime"
         self.x, self.y = self.game.random_empty_spot()
-        if self.game.donuts:
-            self.objective_donut = random.randrange(0, len(self.game.donuts))
+        self.maybe_fixate()
         self.x += 0.25
         self.y += 0.25
         self.speed = 0.04
@@ -109,39 +108,45 @@ class Slime(MoveMixin):
         self.alive = True
         self.despawn_at = None
 
+    def maybe_fixate(self):
+        if self.game.donuts:
+            self.objective_donut = random.randrange(0, len(self.game.donuts))
+            donut = self.game.donuts[self.objective_donut]
+            self.path = astar((int(self.x), int(self.y)),
+                    (int(donut.x), int(donut.y)),
+                    self.game.walls)
+
     def tick(self):
         if self.alive and self.game.donuts:
-            if self.objective_donut >= len(self.game.donuts):
-                self.objective_donut = random.randrange(0, len(self.game.donuts))
-            donut = self.game.donuts[self.objective_donut]
-            path = astar((int(self.x), int(self.y)), (int(donut.x), int(donut.y)), self.game.walls)
-            if len(path) >= 2:
-                step = path[1]
+            if self.objective_donut >= len(self.game.donuts) or not self.path:
+                self.maybe_fixate()
+
+            if len(self.path) >= 1:
+                step = self.path[0]
                 sx = step[0] + 0.25
                 sy = step[1] + 0.25
-            else:
-                sx = donut.x
-                sy = donut.y
 
-            if sx > self.x:
-                self.right = True
-                self.left = False
-            elif sx < self.x:
-                self.left = True
-                self.right = False
-            else:
-                self.left = False
-                self.right = False
-            if sy > self.y:
-                self.down = True
-                self.up = False
-            elif sy < self.y:
-                self.up = True
-                self.down = False
-            else:
-                self.down = False
-                self.up = False
-            self.move()
+                if sx > self.x:
+                    self.right = True
+                    self.left = False
+                elif sx < self.x:
+                    self.left = True
+                    self.right = False
+                else:
+                    self.left = False
+                    self.right = False
+                if sy > self.y:
+                    self.down = True
+                    self.up = False
+                elif sy < self.y:
+                    self.up = True
+                    self.down = False
+                else:
+                    self.down = False
+                    self.up = False
+                self.move()
+                if abs(self.x - sx) < self.speed and abs(self.y - sy) < self.speed:
+                    self.path = self.path[1:]
 
     def splat(self):
         self.alive = False
