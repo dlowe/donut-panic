@@ -41,10 +41,9 @@ var game = (function () {
         ctx.clearRect(0, 0, 640, 480);
         for (var x = 0; x < maze.width; ++x) {
             for (var y = 0; y < maze.height; ++y) {
+                ctx.drawImage(sprites.floor, x*32 - off_x, y*32 - off_y, 32, 32);
                 if (maze.walls[x][y]) {
                     ctx.drawImage(sprites.wall, x*32 - off_x, y*32 - off_y, 32, 32);
-                } else {
-                    ctx.drawImage(sprites.floor, x*32 - off_x, y*32 - off_y, 32, 32);
                 }
             }
         }
