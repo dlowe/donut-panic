@@ -225,18 +225,19 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 39
-        self.height = 35
+        self.width = 9
+        self.height = 5
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
+        self.gameover = False
 
     def serialized_state(self, player_id):
-        return "<%s>" % " ".join(
+        return "%s<%s>" % ("gameover" if self.gameover else "", " ".join(
             ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
                 p.x, p.y, p.facing) for p in self.players.values() if p.socket is not None] +
             ["(donut:%f,%f,_)" % (d.x, d.y) for d in self.donuts] +
-            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
+            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters]))
 
     def serialized_maze(self):
         return "".join(["x" if self.walls[y][x] else " " for y in range(0, self.height) for x in range(0,self.width)])
@@ -263,7 +264,14 @@ class Game:
             y = random.randrange(self.height)
         return x, y
 
+    def maybe_game_over(self):
+        if not self.donuts:
+            self.gameover = True
+
     def tick(self):
+        if self.gameover:
+            return
+
         ## spawn
         self.maybe_spawn()
 
@@ -290,6 +298,7 @@ class Game:
         ## despawn
         self.monsters = [m for m in self.monsters if not m.should_despawn()]
         self.donuts = [d for d in self.donuts if not d.should_despawn]
+        self.maybe_game_over()
 
         ## send updates
         for player in self.players.values():

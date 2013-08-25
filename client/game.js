@@ -20,7 +20,9 @@ var game = (function () {
     var monsters = [];
     var donuts = [];
     var others = [];
+    var gameover = false;
     var sprites = {
+        "gameover": new Image(),
         "wall": new Image(),
         "floor": new Image(),
         "player": {
@@ -45,6 +47,7 @@ var game = (function () {
             },
         }
     }
+    sprites.gameover.src = "gameover.png";
     sprites.wall.src = "wall.png";
     sprites.floor.src = "floor.png";
     sprites.donut.src = "donut.png";
@@ -85,6 +88,9 @@ var game = (function () {
         for (var i = 0; i < others.length; ++i) {
             var other = others[i];
             ctx.drawImage(sprites.player[other.facing], other.x*32 - off_x, other.y*32 - off_y, 16, 16);
+        }
+        if (gameover) {
+            ctx.drawImage(sprites.gameover, 0, 0, 640, 480);
         }
     };
 
@@ -149,9 +155,10 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
-                var state_pattern = /^state:\s*<(.*)>$/;
+                var state_pattern = /^state:\s*((gameover)?)<(.*)>$/;
                 if (result = state_pattern.exec(msg)) {
-                    var packets = result[1].split(" ");
+                    gameover = result[2] === "gameover";
+                    var packets = result[3].split(" ");
                     others = [];
                     monsters = [];
                     donuts = [];
