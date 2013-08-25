@@ -107,12 +107,20 @@ def make_maze(width, height):
             if (0 <= ix < len(maze[0])) and (0 <= iy < len(maze)) and maze[iy][ix]:
                 nx, ny = [ix+dx, iy+dy]
                 if (1 <= nx < (len(maze[0]) - 1)) and (1 <= ny < (len(maze) - 1)) and maze[ny][nx]:
-                    print dx,dy
                     maze[iy][ix] = 0
                     carve(nx, ny, maze)
 
     carve(1, 1, maze)
     return maze
+
+class Donut:
+    def __init__(self, coords):
+        self.x, self.y = coords
+        self.x += 0.25
+        self.y += 0.25
+        self.width = 0.5
+        self.height = 0.5
+        self.eaten = False
 
 class Game:
     def __init__(self, game_id):
@@ -120,15 +128,17 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 45
-        self.height = 21
+        self.width = 23
+        self.height = 17
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
+        self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
 
     def serialized_state(self, player_id):
         return "<%s>" % " ".join(
             ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
                 p.x, p.y, p.facing) for p in self.players.values() if p.socket is not None] +
+            ["(donut:%f,%f,_)" % (d.x, d.y) for d in self.donuts] +
             ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
     def serialized_maze(self):

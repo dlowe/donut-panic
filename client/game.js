@@ -18,6 +18,7 @@ var game = (function () {
         facing: null
     };
     var monsters = [];
+    var donuts = [];
     var others = [];
     var sprites = {
         "wall": new Image(),
@@ -28,6 +29,7 @@ var game = (function () {
             "left": new Image(),
             "right": new Image()
         },
+        "donut": new Image(),
         "monsters": {
             "slime": {
                 "up": new Image(),
@@ -45,6 +47,7 @@ var game = (function () {
     }
     sprites.wall.src = "wall.png";
     sprites.floor.src = "floor.png";
+    sprites.donut.src = "donut.png";
     sprites.player.up.src = "player_up.png";
     sprites.player.down.src = "player_down.png";
     sprites.player.left.src = "player_left.png";
@@ -69,6 +72,10 @@ var game = (function () {
                     ctx.drawImage(sprites.wall, x*32 - off_x, y*32 - off_y, 32, 32);
                 }
             }
+        }
+        for (var i = 0; i < donuts.length; ++i) {
+            var donut = donuts[i];
+            ctx.drawImage(sprites.donut, donut.x*32 - off_x, donut.y*32 - off_y, 16, 16);
         }
         for (var i = 0; i < monsters.length; ++i) {
             var monster = monsters[i];
@@ -147,6 +154,7 @@ var game = (function () {
                     var packets = result[1].split(" ");
                     others = [];
                     monsters = [];
+                    donuts = [];
                     for (var i = 0; i < packets.length; ++i) {
                         var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),(.*)\)$/;
                         if (p_result = packet_pattern.exec(packets[i])) {
@@ -159,6 +167,12 @@ var game = (function () {
                                     player.x = x;
                                     player.y = y;
                                     player.facing = facing;
+                                    break;
+                                case "donut":
+                                    donuts.push({
+                                        x: x,
+                                        y: y
+                                    });
                                     break;
                                 case "slime":
                                 case "splat":
