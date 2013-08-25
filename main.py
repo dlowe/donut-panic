@@ -93,38 +93,35 @@ def collided(thing1, thing2):
         within(thing1, thing2.x + thing2.width, thing2.y) or
         within(thing1, thing2.x + thing2.width, thing2.y + thing2.height))
 
+def make_maze(width, height):
+    maze = [[1 for _ in range(width)] for _ in range(height)]
+
+    def carve(cx, cy, maze):
+        maze[cy][cx] = 0
+        directions = [[0,1], [0,-1], [1,0], [-1,0]]
+        random.shuffle(directions)
+        for dx,dy in directions:
+            ix, iy = [cx+dx, cy+dy]
+            if (0 <= ix < len(maze[0])) and (0 <= iy < len(maze)) and maze[iy][ix]:
+                nx, ny = [ix+dx, iy+dy]
+                if (1 <= nx < (len(maze[0]) - 1)) and (1 <= ny < (len(maze) - 1)) and maze[ny][nx]:
+                    print dx,dy
+                    maze[iy][ix] = 0
+                    carve(nx, ny, maze)
+
+    carve(1, 1, maze)
+    return maze
+
 class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 25
-        self.height = 20
+        self.width = 45
+        self.height = 21
         self.last_spawn = None
-        ## XXX: randomize
-        self.walls = [
-                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                [1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,1,1,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,1,0,1,1,1,1,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,0,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,1,0,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        ]
+        self.walls = make_maze(self.width, self.height)
 
     def serialized_state(self, player_id):
         return "<%s>" % " ".join(
