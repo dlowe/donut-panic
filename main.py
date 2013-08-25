@@ -97,7 +97,7 @@ class Slime(MoveMixin):
         self.objective_donut = random.randrange(0, len(self.game.donuts))
         self.x += 0.25
         self.y += 0.25
-        self.speed = 0.01
+        self.speed = 0.04
         self.width = 0.5 # blocks
         self.height = 0.5 # blocks
         self.facing = "down"
