@@ -17,7 +17,7 @@ var game = (function () {
         y: null,
         facing: null
     };
-    var entities = null;
+    var monsters = [];
     var sprites = {
         "wall": new Image(),
         "floor": new Image(),
@@ -26,6 +26,14 @@ var game = (function () {
             "down": new Image(),
             "left": new Image(),
             "right": new Image()
+        },
+        "monsters": {
+            "slime": {
+                "up": new Image(),
+                "down": new Image(),
+                "left": new Image(),
+                "right": new Image(),
+            },
         }
     }
     sprites.wall.src = "wall.png";
@@ -34,6 +42,10 @@ var game = (function () {
     sprites.player.down.src = "player_down.png";
     sprites.player.left.src = "player_left.png";
     sprites.player.right.src = "player_right.png";
+    sprites.monsters.slime.up.src = "slime.png";
+    sprites.monsters.slime.down.src = "slime.png";
+    sprites.monsters.slime.left.src = "slime.png";
+    sprites.monsters.slime.right.src = "slime.png";
 
     var repaint = function(timestamp) {
         var off_x = Math.max(0, Math.min(player.x*32 - 336, maze.width*32 - 640));
@@ -48,6 +60,10 @@ var game = (function () {
             }
         }
         ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
+        for (var i = 0; i < monsters.length; ++i) {
+            var monster = monsters[i];
+            ctx.drawImage(sprites.monsters[monster.name][monster.facing], monster.x*32 - off_x, monster.y*32 - off_y, 16, 16);
+        }
     };
 
     var keydown = function(e) {
@@ -112,12 +128,37 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
-                var player_pattern = /^player:\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(.*)$/;
-                if (result = player_pattern.exec(msg)) {
+                var state_pattern = /^state:\s*<(.*)>$/;
+                if (result = state_pattern.exec(msg)) {
+                    var packets = result[1].split(" ");
+                    monsters = [];
+                    for (var i = 0; i < packets.length; ++i) {
+                        var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),(.*)\)$/;
+                        if (p_result = packet_pattern.exec(packets[i])) {
+                            var type = p_result[1];
+                            var x = parseFloat(p_result[2]);
+                            var y = parseFloat(p_result[3]);
+                            var facing = p_result[4];
+                            switch (type) {
+                                case "you":
+                                    player.x = x;
+                                    player.y = y;
+                                    player.facing = facing;
+                                    break;
+                                case "slime":
+                                    monsters.push({
+                                        name: "slime",
+                                        x: x,
+                                        y: y,
+                                        facing: facing
+                                    });
+                                    break;
+                            };
+                        } else {
+                            throw "wtf?";
+                        }
+                    }
                     ws.send("ack");
-                    player.x = parseFloat(result[1]);
-                    player.y = parseFloat(result[2]);
-                    player.facing = result[3];
                     requestAnimationFrame(repaint);
                 } else {
                     throw "wtf?";

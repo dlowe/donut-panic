@@ -1,3 +1,6 @@
+import datetime
+import random
+
 import tornado.options
 import tornado.ioloop
 import tornado.httpserver
@@ -10,9 +13,22 @@ define("port", default=5000, help="port", type=int)
 
 GAMES = {}
 
+class Slime:
+    def __init__(self, game):
+        self.game = game
+        self.name = "slime"
+        self.x, self.y = self.game.random_empty_spot()
+        self.x += 0.25;
+        self.y += 0.25;
+        self.facing = "down"
+
+    def tick(self):
+        pass
+
 class Player:
     def __init__(self, game, player_id):
         self.game = game
+        self.player_id = player_id
         self.x = 2.0
         self.y = 2.0
         self.facing = "down"
@@ -56,9 +72,11 @@ class Game:
     def __init__(self, game_id):
         self.game_id = game_id
         self.players = {}
+        self.monsters = []
         self.loop = None
         self.width = 25
         self.height = 20
+        self.last_spawn = None
         ## XXX: randomize
         self.walls = [
                 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -83,13 +101,38 @@ class Game:
                 [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         ]
 
+    def serialized_state(self, player_id):
+        return "<%s>" % " ".join(
+            ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
+                p.x, p.y, p.facing) for p in self.players.values()] +
+            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
+
     def serialized_maze(self):
         return "".join(["x" if self.walls[y][x] else " " for y in range(0, self.height) for x in range(0,self.width)])
 
+    def maybe_spawn(self):
+        now = datetime.datetime.now()
+        if self.last_spawn is None or ((now - self.last_spawn).total_seconds() >= 10):
+            self.monsters.append(Slime(self))
+            self.last_spawn = now
+
+    def random_empty_spot(self):
+        x = None
+        y = None
+        while x is None or y is None or self.walls[y][x]:
+            x = random.randrange(self.width)
+            y = random.randrange(self.height)
+        return x, y
+
     def tick(self):
+        ## spawn
+        self.maybe_spawn()
+
         ## move everything
         for player in self.players.values():
             player.tick()
+        for monster in self.monsters:
+            monster.tick()
 
         ## send updates
         for player in self.players.values():
@@ -149,7 +192,7 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
 
     def maybe_send_player(self):
         if self.state == self.States.ACKED:
-            self.write_message('player: %f %f %s' % (self.player.x, self.player.y, self.player.facing))
+            self.write_message('state: %s' % self.game.serialized_state(self.player_id))
             self.state = self.States.ACK_WAIT
 
     def on_message(self, message):
