@@ -5,7 +5,6 @@ slime "facing"
 splash screen
 "new game" with random name
 functional "join existing"
-despawn splats
 splat sounds
 background music
 random mazes

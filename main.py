@@ -24,9 +24,18 @@ class Slime:
         self.height = 0.5 # blocks
         self.facing = "down"
         self.alive = True
+        self.despawn_at = None
 
     def tick(self):
         pass
+
+    def splat(self):
+        self.alive = False
+        self.name = "splat"
+        self.despawn_at = datetime.datetime.now() + datetime.timedelta(0, 10)
+
+    def should_despawn(self):
+        return (self.despawn_at is not None) and (self.despawn_at <= datetime.datetime.now())
 
 class Player:
     def __init__(self, game, player_id):
@@ -163,8 +172,10 @@ class Game:
             if monster.alive:
                 for player in self.players.values():
                     if collided(monster, player):
-                        monster.alive = False
-                        monster.name = "splat"
+                        monster.splat()
+
+        ## despawn
+        self.monsters = [m for m in self.monsters if not m.should_despawn()]
 
         ## send updates
         for player in self.players.values():
