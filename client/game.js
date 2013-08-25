@@ -25,16 +25,17 @@ var game = (function () {
     sprites.player.src = "player.png";
 
     var repaint = function(timestamp) {
+        var off_x = Math.max(0, Math.min(player.x*64 - 336, maze.width*64 - 640));
+        var off_y = Math.max(0, Math.min(player.y*64 - 256, maze.height*64 - 480));
         ctx.clearRect(0, 0, 640, 480);
         for (var x = 0; x < maze.width; ++x) {
             for (var y = 0; y < maze.height; ++y) {
                 if (maze.walls[x][y]) {
-                    ctx.drawImage(sprites.wall, x*64, y*64, 64, 64);
+                    ctx.drawImage(sprites.wall, x*64 - off_x, y*64 - off_y, 64, 64);
                 }
             }
         }
-        ctx.drawImage(sprites.player, player.x*64, player.y*64, 32, 32);
-        // requestAnimationFrame(repaint);
+        ctx.drawImage(sprites.player, player.x*64 - off_x, player.y*64 - off_y, 32, 32);
     };
 
     var keydown = function(e) {
@@ -91,8 +92,6 @@ var game = (function () {
                     console.log(maze.walls);
                     ws.send("ack");
                     state = States.STARTED;
-                    // start painting!
-                    requestAnimationFrame(repaint);
                     // start paying attention to keyboard events
                     $(document).keydown(keydown);
                     $(document).keyup(keyup);
