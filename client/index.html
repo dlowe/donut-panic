@@ -4,11 +4,27 @@
         </head>
         <body style="background-color:black; overflow:hidden;">
                 <div id="container" style="position: relative; margin: 0px auto; width: 640px;">
-                <div id="intro" style="position: absolute; top: 0; left: 0; background-color:white; width:640px; height:480px">
-                        <button id="single">Single Player</button><br>
-                        <button id="mp_create">Make Multiplayer Game</button><br>
-                        <textarea id="mp_game_id"></textarea>
-                        <button id="mp_join">Join Multiplayer Game</button><br>
+                <div id="intro" style="position: absolute; top: 0; left: 0; background-color:white; background-image:url('splash.png'); width:640px; height:480px">
+                            <div id="left" style="position: absolute; height: 120px; width:320px; top:360px; padding-left:10px;">
+                                <label for="width">maze width</label>
+                                <input type="range" id="width" name="width" value="29" min="21" max="51" step="2"><br>
+
+                                <label for="height">maze height</label>
+                                <input type="range" id="height" name="height" value="19" min="15" max="51" step="2"><br>
+
+                                <label for="n_donuts">#donuts</label>
+                                <input type="range" id="n_donuts" name="n_donuts" value="5" min="2" max="10" step="1"><br>
+
+                                <label for="n_spawners">#spawners</label>
+                                <input type="range" id="n_spawners" name="n_spawners" value="4" min="2" max="10" step="1"><br>
+                                <button id="mp_create">Make Multiplayer Game</button>
+                            </div>
+                            <div id="right" style="position: absolute; height: 120px; width:320px; top: 360px; left: 320px;">
+                                <button id="single">Singleplayer</button><br>
+                                <button id="mp_join">Multiplayer</button><br>
+
+                                <textarea rows=1 cols="10" id="mp_game_id"></textarea>
+                            </div>
                 </div>
                 <canvas id="viewport" width=640 height=480 style="background-color: white; position: absolute; top: 0; left: 0;">
                 </div>
@@ -27,6 +43,14 @@
                                    $("#viewport")[0].getContext("2d"));
                 }
 
+                function make(cb) {
+                        game.new_game($("#width").val(),
+                                      $("#height").val(),
+                                      $("#n_donuts").val(),
+                                      $("#n_spawners").val(),
+                                      cb);
+                }
+
                 function join(game_id) {
                         game.join_game(game_id, start);
                 }
@@ -35,11 +59,11 @@
                         $("#intro").show();
                         $("#viewport").hide();
                         $("#single").click(function() {
-                                game.new_game(join);
+                                make(join);
                         });
 
                         $("#mp_create").click(function() {
-                                game.new_game(function (game_id) {
+                                make(function (game_id) {
                                         $("#mp_game_id").text(game_id);
                                 });
                         });

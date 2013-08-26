@@ -244,10 +244,16 @@ var game = (function () {
     }
 
     return {
-        new_game: function(cb) {
+        new_game: function(width, height, n_donuts, n_spawners, cb) {
                       $.ajax({
                           'url': '/api/new-game',
                           'type': 'POST',
+                          'data': {
+                              'width': width,
+                              'height': height,
+                              'n_donuts': n_donuts,
+                              'n_spawners': n_spawners
+                          },
                           'success': function (data) {
                               cb(data.game_id);
                           }

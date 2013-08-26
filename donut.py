@@ -231,17 +231,17 @@ class Spawner:
         self.height = 1.0
 
 class Game:
-    def __init__(self, game_id):
+    def __init__(self, game_id, height, width, n_donuts, n_spawners):
         self.game_id = game_id
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 29
-        self.height = 19
+        self.width = width
+        self.height = height
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
-        self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
-        self.spawners = [Spawner(self.random_empty_spot()) for _ in range(3)]
+        self.donuts = [Donut(self.random_empty_spot()) for _ in range(n_donuts)]
+        self.spawners = [Spawner(self.random_empty_spot()) for _ in range(n_spawners)]
         self.gameover = False
 
     def serialized_state(self, player_id):
@@ -344,12 +344,16 @@ ADJECTIVES = ["big", "red", "old", "hot", "dry", "sad", "wee"]
 NOUNS = ["pig", "cup", "fox", "pot", "tub", "mug", "zoo"]
 
 class NewGameHandler(tornado.web.RequestHandler):
-    def post(self):
+    def post(self, *args, **kwargs):
+        height = int(self.get_argument("height"))
+        width = int(self.get_argument("width"))
+        n_donuts = int(self.get_argument("n_donuts"))
+        n_spawners = int(self.get_argument("n_spawners"))
         game_id = "%s-%s-%d" % (random.choice(ADJECTIVES),
                 random.choice(NOUNS), random.randrange(10,100))
         print "new game %s" % game_id
         if not game_id in GAMES:
-            GAMES[game_id] = Game(game_id)
+            GAMES[game_id] = Game(game_id, height, width, n_donuts, n_spawners)
         self.set_header("Content-Type", "application/json")
         self.write({
             "game_id": game_id,
