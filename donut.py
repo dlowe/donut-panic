@@ -259,6 +259,8 @@ class Player(MoveMixin):
         self.socket = None
         self.events = []
         self.desplat_at = None
+        self.msg = ""
+        self.unsay_at = None
 
     def serialized_events(self):
         return "<%s>" % " ".join(self.events)
@@ -275,13 +277,21 @@ class Player(MoveMixin):
         else:
             return False
 
+    def say(self, msg):
+        self.msg = msg
+        self.unsay_at = datetime.datetime.now() + datetime.timedelta(0, 10)
+
     def tick(self):
         if self.desplat_at is None:
             self.move()
 
-        if (self.desplat_at is not None) and (self.desplat_at <= datetime.datetime.now()):
+        now = datetime.datetime.now()
+        if (self.desplat_at is not None) and (self.desplat_at <= now):
             self.facing = "down"
             self.desplat_at = None
+        if (self.unsay_at is not None) and (self.unsay_at <= now):
+            self.msg = ""
+            self.unsay_at = None
 
 def within(thing, x, y):
     return ((x >= thing.x) and
@@ -348,10 +358,10 @@ class Game:
 
     def serialized_state(self, player_id):
         return "<%s>" % " ".join(
-            ["(%s:%f,%f,%s,%s)" % ("you" if p.player_id == player_id else "other",
-                p.x, p.y, p.facing, p.nick) for p in self.players.values() if p.socket is not None] +
-            ["(donut:%f,%f,_,_)" % (d.x, d.y) for d in self.donuts] +
-            ["(%s:%f,%f,%s,_)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
+            ["(%s:%f,%f,%s,%s,%s)" % ("you" if p.player_id == player_id else "other",
+                p.x, p.y, p.facing, p.nick, p.msg.replace(" ", "_")) for p in self.players.values() if p.socket is not None] +
+            ["(donut:%f,%f,_,_,_)" % (d.x, d.y) for d in self.donuts] +
+            ["(%s:%f,%f,%s,_,_)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
     def serialized_point(self, x, y):
         if self.walls[y][x]:
@@ -465,7 +475,7 @@ class NewGameHandler(tornado.web.RequestHandler):
 class JoinGameHandler(tornado.web.RequestHandler):
     def post(self, game_id):
         print "[%s] join game" % game_id
-        nick = self.get_argument("nick").replace(" ", "_")
+        nick = self.get_argument("nick").replace(" ", "_").replace(",",".")
         player_id = str(uuid.uuid4())
         GAMES[game_id].add_player(player_id, nick)
         self.set_header("Content-Type", "application/json")
@@ -526,6 +536,10 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
                 return
 
         if self.state == self.States.ACK_WAIT or self.state == self.States.ACKED:
+            if message.startswith('say: '):
+                self.player.say(message[5:])
+                return
+
             if self.player.desplat_at is None:
                 if message == 'right':
                     self.player.right = True

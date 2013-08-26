@@ -20,12 +20,14 @@ var game = (function () {
         x: null,
         y: null,
         facing: null,
-        nick: null
+        nick: null,
+        msg: null
     };
     var monsters = [];
     var donuts = [];
     var others = [];
     var gameover = false;
+    var saying = null;
     var sounds = {
         "bg": new Audio("bg.ogg"),
         "splat": new Audio("splat.ogg"),
@@ -95,41 +97,60 @@ var game = (function () {
     var repaint = function(timestamp) {
         var off_x = Math.max(0, Math.min(player.x*32 - 336, maze.width*32 - 640));
         var off_y = Math.max(0, Math.min(player.y*32 - 256, maze.height*32 - 480));
+        var di = function(s, x, y, d) {
+            ctx.drawImage(s, x*32 - off_x, y*32 - off_y, d, d);
+        }
+        var dp = function(p) {
+            // sprite
+            di(sprites.player[p.facing], p.x, p.y, 16);
+            // nametag
+            ctx.fillStyle = "white";
+            ctx.font = "8px Courier";
+            ctx.fillText(p.nick, p.x*32 - off_x, p.y*32 - off_y + 25);
+            // message
+            if (p.msg) {
+                ctx.font = "9px Courier";
+                var msg_width = ctx.measureText(p.msg);
+                ctx.fillRect(p.x*32 - off_x + 6, p.y*32 - off_y - 13, msg_width.width + 2, 11);
+                ctx.fillStyle = "black";
+                ctx.fillText(p.msg, p.x*32 - off_x + 7, p.y*32 - off_y - 5);
+            }
+        }
         ctx.clearRect(0, 0, 640, 480);
         for (var x = 0; x < maze.width; ++x) {
             for (var y = 0; y < maze.height; ++y) {
-                ctx.drawImage(sprites.floor, x*32 - off_x, y*32 - off_y, 32, 32);
+                di(sprites.floor, x, y, 32);
                 if (maze.walls[x][y]) {
-                    ctx.drawImage(sprites.wall, x*32 - off_x, y*32 - off_y, 32, 32);
+                    di(sprites.wall, x, y, 32);
                 } else if (maze.spawners[x][y]) {
-                    ctx.drawImage(sprites.spawner, x*32 - off_x, y*32 - off_y, 32, 32);
+                    di(sprites.spawner, x, y, 32);
                 }
             }
         }
         for (var i = 0; i < donuts.length; ++i) {
             var donut = donuts[i];
-            ctx.drawImage(sprites.donut, donut.x*32 - off_x, donut.y*32 - off_y, 16, 16);
+            di(sprites.donut, donut.x, donut.y, 16);
         }
         for (var i = 0; i < monsters.length; ++i) {
             var monster = monsters[i];
-            ctx.drawImage(sprites.monsters[monster.name][monster.facing], monster.x*32 - off_x, monster.y*32 - off_y, 16, 16);
+            di(sprites.monsters[monster.name][monster.facing], monster.x, monster.y, 16);
         }
-        ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "8px Courier";
-        ctx.fillText(player.nick, player.x*32 - off_x, player.y*32 - off_y + 25);
+
+        dp(player);
         for (var i = 0; i < others.length; ++i) {
-            var other = others[i];
-            ctx.drawImage(sprites.player[other.facing], other.x*32 - off_x, other.y*32 - off_y, 16, 16);
-            ctx.fillText(other.nick, other.x*32 - off_x, other.y*32 - off_y + 25);
+            dp(others[i]);
         }
+
         if (gameover) {
             ctx.drawImage(sprites.gameover, 0, 0, 640, 480);
-        }
-        if (state == States.CLOSED) {
+        } else if (state == States.CLOSED) {
             ctx.fillStyle = "#FFCCCC";
             ctx.font = "40px Courier";
             ctx.fillText(error_message, 20, 200);
+        } else if (saying != null) {
+            ctx.fillStyle = "#CCCCCC";
+            ctx.font = "30px Courier";
+            ctx.fillText("SAY> " + saying, 20, 400);
         }
     };
 
@@ -150,25 +171,54 @@ var game = (function () {
     var keypress = function(e) {
         switch (e.keyCode) {
             case 113:
-            case 81:
                 stop();
                 $(document).unbind("keypress");
                 on_quit();
+                break;
+            case 116:
+                saying = "";
+                $(document).unbind("keypress");
+                $(document).unbind("keydown");
+                $(document).keypress(function (e) {
+                    switch (e.keyCode) {
+                        case 13:
+                            send("say: " + saying);
+                            saying = null;
+                            $(document).unbind("keypress");
+                            $(document).keypress(keypress);
+                            $(document).keydown(keydown);
+                            break;
+                        default:
+                            saying += String.fromCharCode(e.charCode);
+                            break;
+                    };
+                });
+                // $(document).unbind("keyup");
+                break;
         }
     }
 
     var keydown = function(e) {
         switch (e.keyCode) {
+            case 27:
+                stop();
+                $(document).unbind("keypress");
+                on_quit();
+                break;
             case 37:
+            case 65:
                 send("left");
                 break;
             case 38:
+            case 87:
                 send("up");
                 break;
             case 39:
+            case 68:
                 send("right");
                 break;
             case 40:
+            case 83:
                 send("down");
                 break;
         };
@@ -177,15 +227,19 @@ var game = (function () {
     var keyup = function(e) {
         switch (e.keyCode) {
             case 37:
+            case 65:
                 send("!left");
                 break;
             case 38:
+            case 87:
                 send("!up");
                 break;
             case 39:
+            case 68:
                 send("!right");
                 break;
             case 40:
+            case 83:
                 send("!down");
                 break;
         };
@@ -253,19 +307,21 @@ var game = (function () {
                     monsters = [];
                     donuts = [];
                     for (var i = 0; i < packets.length; ++i) {
-                        var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),([^,]*),(.*)\)$/;
+                        var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),([^,]*),([^,]*),(.*)\)$/;
                         if (p_result = packet_pattern.exec(packets[i])) {
                             var type = p_result[1];
                             var x = parseFloat(p_result[2]);
                             var y = parseFloat(p_result[3]);
                             var facing = p_result[4];
                             var nick = p_result[5];
+                            var msg = p_result[6].replace(/_/g, " ");
                             switch (type) {
                                 case "you":
                                     player.x = x;
                                     player.y = y;
                                     player.facing = facing;
                                     player.nick = nick;
+                                    player.msg = msg;
                                     break;
                                 case "donut":
                                     donuts.push({
@@ -289,7 +345,8 @@ var game = (function () {
                                         x: x,
                                         y: y,
                                         facing: facing,
-                                        nick: nick
+                                        nick: nick,
+                                        msg: msg
                                     });
                                     break;
                             };
