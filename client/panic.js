@@ -1,6 +1,7 @@
 var game = (function () {
     var ctx;
     var ws;
+    var on_quit;
     var States = {
         UNOPENED: 0,
         MAZE_WAIT: 1,
@@ -119,6 +120,24 @@ var game = (function () {
         }
     }
 
+    var stop = function() {
+        ws.onclose = function () {};
+        ws.close();
+        sounds["bg"].pause();
+        $(document).unbind("keydown");
+        $(document).unbind("keyup");
+    }
+
+    var keypress = function(e) {
+        switch (e.keyCode) {
+            case 113:
+            case 81:
+                stop();
+                $(document).unbind("keypress");
+                on_quit();
+        }
+    }
+
     var keydown = function(e) {
         switch (e.keyCode) {
             case 37:
@@ -155,10 +174,10 @@ var game = (function () {
 
     var error = function(err) {
         state = States.CLOSED;
-        sounds["bg"].pause();
-        $(document).keydown(null);
-        $(document).keyup(null);
         error_message = err;
+        console.log(err);
+        stop();
+        requestAnimationFrame(repaint);
     };
 
     var message = function(msg) {
@@ -190,6 +209,7 @@ var game = (function () {
                     // start paying attention to keyboard events
                     $(document).keydown(keydown);
                     $(document).keyup(keyup);
+                    $(document).keypress(keypress);
                 } else {
                     error("Unparseable Maze");
                 }
@@ -290,8 +310,9 @@ var game = (function () {
                            }
                        });
                    },
-        start: function(host, port, game_id, player_id, canvas_context) {
+        start: function(host, port, game_id, player_id, canvas_context, quit) {
                    ctx = canvas_context;
+                   on_quit = quit;
                    ws = new WebSocket("ws://" + host + ":" + port
                            + "/play-game/" + game_id + "/" + player_id);
                    ws.onclose = function () {

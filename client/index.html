@@ -33,6 +33,11 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
         <script src="panic.js"></script>
         <script language="javascript">
+                function quit() {
+                        $("#viewport").hide();
+                        $("#intro").show();
+                }
+
                 function start(game_id, player_id) {
                         $("#intro").hide();
                         $("#viewport").show();
@@ -40,7 +45,8 @@
                                    window.location.port,
                                    game_id,
                                    player_id,
-                                   $("#viewport")[0].getContext("2d"));
+                                   $("#viewport")[0].getContext("2d"),
+                                   quit);
                 }
 
                 function make(cb) {
