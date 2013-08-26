@@ -1,3 +1,4 @@
+handle closed connection in client
 slimes turn bad when they eat donuts
 10s splatted players
 quit button
@@ -6,6 +7,9 @@ nametags
 make splash screen look decent
 slime facing
 splat facing
+one more baddie
+game over sound effect
+make a bit more space in the maze?
 send to github
 host on lab.roguehacklab.com
 submit to ludum dare :)
