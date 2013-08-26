@@ -340,8 +340,8 @@ class Game:
     def get_player(self, player_id):
         return self.players[player_id]
 
-ADJECTIVES = ["big", "red", "old", "hot", "dry", "sad"]
-NOUNS = ["pig", "cup", "fox", "pot", "tub", "mug"]
+ADJECTIVES = ["big", "red", "old", "hot", "dry", "sad", "wee"]
+NOUNS = ["pig", "cup", "fox", "pot", "tub", "mug", "zoo"]
 
 class NewGameHandler(tornado.web.RequestHandler):
     def post(self):
