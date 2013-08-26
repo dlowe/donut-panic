@@ -107,8 +107,8 @@ var game = (function () {
             ctx.drawImage(sprites.gameover, 0, 0, 640, 480);
         }
         if (state == States.CLOSED) {
-            ctx.fillStyle = "#FF0000";
-            ctx.font = "30px Courier";
+            ctx.fillStyle = "#FFCCCC";
+            ctx.font = "40px Courier";
             ctx.fillText(error_message, 20, 200);
         }
     };
@@ -181,7 +181,7 @@ var game = (function () {
                         }
                     }
                     console.log(maze.walls);
-                    ws.send("ack");
+                    send("ack");
                     state = States.STARTED;
                     // start music
                     sounds["bg"].load();
@@ -191,7 +191,7 @@ var game = (function () {
                     $(document).keydown(keydown);
                     $(document).keyup(keyup);
                 } else {
-                    throw "wtf?";
+                    error("Unparseable Maze");
                 }
                 break;
             case States.STARTED:
@@ -250,17 +250,18 @@ var game = (function () {
                                     break;
                             };
                         } else {
-                            throw "wtf?";
+                            error("Unparseable State Packet");
                         }
                     }
-                    ws.send("ack");
+                    send("ack");
                     requestAnimationFrame(repaint);
                 } else {
-                    throw "wtf?";
+                    error("Unparseable State");
                 }
                 break;
             default:
-                throw "wtf?";
+                error("Unknown State");
+                break;
         }
     }
 
