@@ -229,8 +229,8 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 9
-        self.height = 9
+        self.width = 29
+        self.height = 19
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
@@ -302,6 +302,7 @@ class Game:
             for monster in self.monsters:
                 if monster.alive:
                     if collided(donut, monster):
+                        self.add_event("omnomnom")
                         donut.omnomnom()
 
         ## despawn
@@ -316,6 +317,7 @@ class Game:
 
     def add_player(self, player_id):
         self.players[player_id] = Player(self, player_id)
+        self.add_event("oink")
 
     def get_player(self, player_id):
         return self.players[player_id]

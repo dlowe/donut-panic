@@ -22,7 +22,9 @@ var game = (function () {
     var others = [];
     var gameover = false;
     var sounds = {
-        "splat": new Audio("splat.ogg")
+        "splat": new Audio("splat.ogg"),
+        "omnomnom": new Audio("omnomnom.ogg"),
+        "oink": new Audio("oink.ogg")
     }
     var sprites = {
         "gameover": new Image(),
