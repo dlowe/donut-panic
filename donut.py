@@ -279,7 +279,6 @@ class Player(MoveMixin):
             self.move()
 
         if (self.desplat_at is not None) and (self.desplat_at <= datetime.datetime.now()):
-            print "[%s]: desplat" % self.player_id
             self.facing = "down"
             self.desplat_at = None
 
@@ -506,7 +505,6 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
             self.state = self.States.ACK_WAIT
 
     def on_message(self, message):
-        # print "[%s/%s] new message %s" % (self.game_id, self.player_id, message)
         if self.state == self.States.OPEN:
             if message == 'ready':
                 self.write_message('maze: %d %d %s' % (self.game.width,
@@ -527,7 +525,6 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
 
         if self.state == self.States.ACK_WAIT or self.state == self.States.ACKED:
             if self.player.desplat_at is None:
-                print "[%s] move: %s" % (self.player.player_id, message)
                 if message == 'right':
                     self.player.right = True
                     self.player.facing = "right"
