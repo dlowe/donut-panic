@@ -21,6 +21,9 @@ var game = (function () {
     var donuts = [];
     var others = [];
     var gameover = false;
+    var sounds = {
+        "splat": new Audio("splat.ogg")
+    }
     var sprites = {
         "gameover": new Image(),
         "wall": new Image(),
@@ -155,10 +158,17 @@ var game = (function () {
                 }
                 break;
             case States.STARTED:
-                var state_pattern = /^state:\s*((gameover)?)<(.*)>$/;
+                var state_pattern = /^state:\s*((gameover)?)<(.*)><(.*)>$/;
                 if (result = state_pattern.exec(msg)) {
                     gameover = result[2] === "gameover";
-                    var packets = result[3].split(" ");
+                    var events = result[3].split(" ");
+                    for (var i = 0; i < events.length; ++i) {
+                        if (events[i] !== "") {
+                            sounds[events[i]].load();
+                            sounds[events[i]].play();
+                        }
+                    }
+                    var packets = result[4].split(" ");
                     others = [];
                     monsters = [];
                     donuts = [];

@@ -172,6 +172,10 @@ class Player(MoveMixin):
         self.left = False
         self.right = False
         self.socket = None
+        self.events = []
+
+    def serialized_events(self):
+        return "<%s>" % " ".join(self.events)
 
     def tick(self):
         self.move()
@@ -225,19 +229,19 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 29
-        self.height = 19
+        self.width = 9
+        self.height = 9
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
         self.gameover = False
 
     def serialized_state(self, player_id):
-        return "%s<%s>" % ("gameover" if self.gameover else "", " ".join(
+        return "<%s>" % " ".join(
             ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
                 p.x, p.y, p.facing) for p in self.players.values() if p.socket is not None] +
             ["(donut:%f,%f,_)" % (d.x, d.y) for d in self.donuts] +
-            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters]))
+            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
     def serialized_maze(self):
         return "".join(["x" if self.walls[y][x] else " " for y in range(0, self.height) for x in range(0,self.width)])
@@ -268,6 +272,10 @@ class Game:
         if not self.donuts:
             self.gameover = True
 
+    def add_event(self, event):
+        for player in self.players.values():
+            player.events.append(event)
+
     def tick(self):
         if self.gameover:
             return
@@ -286,6 +294,7 @@ class Game:
             if monster.alive:
                 for player in self.players.values():
                     if collided(monster, player):
+                        self.add_event("splat")
                         monster.splat()
 
         ## eaten?
@@ -363,7 +372,10 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
 
     def maybe_send_player(self):
         if self.state == self.States.ACKED:
-            self.write_message('state: %s' % self.game.serialized_state(self.player_id))
+            self.write_message('state: %s%s%s' % ("gameover" if self.game.gameover else "",
+                self.player.serialized_events(),
+                self.game.serialized_state(self.player_id)))
+            self.player.events = []
             self.state = self.States.ACK_WAIT
 
     def on_message(self, message):
