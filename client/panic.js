@@ -31,7 +31,8 @@ var game = (function () {
         "omnomnom": new Audio("omnomnom.ogg"),
         "oink": new Audio("oink.ogg"),
         "spawn": new Audio("spawn.ogg"),
-        "crash": new Audio("crash.ogg")
+        "crash": new Audio("crash.ogg"),
+        "gameover": new Audio("gameover.ogg")
     }
     var sprites = {
         "gameover": new Image(),

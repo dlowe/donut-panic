@@ -390,6 +390,7 @@ class Game:
 
     def maybe_game_over(self):
         if not self.donuts:
+            self.add_event("gameover")
             self.gameover = True
 
     def add_event(self, event):
