@@ -89,7 +89,99 @@ class MoveMixin:
                     y = int(y) + 1
         self.y = y
 
-class Slime(MoveMixin):
+class PathMixin:
+    def pre_move(self):
+        if len(self.path) >= 1:
+            step = self.path[0]
+            sx = step[0] + 0.25
+            sy = step[1] + 0.25
+
+            if sx > self.x:
+                self.right = True
+                self.left = False
+            elif sx < self.x:
+                self.left = True
+                self.right = False
+            else:
+                self.left = False
+                self.right = False
+            if sy > self.y:
+                self.down = True
+                self.up = False
+            elif sy < self.y:
+                self.up = True
+                self.down = False
+            else:
+                self.down = False
+                self.up = False
+
+    def post_move(self):
+        if len(self.path) >= 1:
+            step = self.path[0]
+            sx = step[0] + 0.25
+            sy = step[1] + 0.25
+
+            if abs(self.x - sx) < self.speed and abs(self.y - sy) < self.speed:
+                self.path = self.path[1:]
+
+class EvilSlime(MoveMixin, PathMixin):
+    def __init__(self, slime):
+        self.game = slime.game
+        self.name = "evilslime"
+        self.x = slime.x
+        self.y = slime.y
+        self.maybe_fixate()
+        self.speed = 0.01
+        self.width = slime.width
+        self.height = slime.height
+        self.facing = slime.facing
+        self.left = False
+        self.right = False
+        self.up = False
+        self.down = False
+        self.alive = True
+        self.despawn_at = None
+        self.upgrade = False
+
+    def squirrel(self):
+        self.path = astar((int(self.x), int(self.y)),
+                self.game.random_empty_spot(),
+                self.game.walls)
+
+    def maybe_fixate(self):
+        victims = [p for p in self.game.players.values() if p.desplat_at is not None]
+        if victims:
+            victim = random.choice(victims)
+            self.path = astar((int(self.x), int(self.y)),
+                    (int(victim.x), int(victim.y)),
+                    self.game.walls)
+        else:
+            self.squirrel()
+
+    def tick(self):
+        if not self.path:
+            self.maybe_fixate()
+
+        self.pre_move()
+        self.move()
+        self.post_move()
+
+    def splat(self, player):
+        if player.splat():
+            self.squirrel()
+            return True
+        return False
+
+    def should_despawn(self):
+        return False
+
+    def omnomnom(self, donut):
+        return False
+
+    def maybe_upgrade(self):
+        return self
+
+class Slime(MoveMixin, PathMixin):
     def __init__(self, game, spawner):
         self.game = game
         self.name = "slime"
@@ -108,6 +200,7 @@ class Slime(MoveMixin):
         self.down = False
         self.alive = True
         self.despawn_at = None
+        self.upgrade = False
 
     def maybe_fixate(self):
         if self.game.donuts:
@@ -122,40 +215,30 @@ class Slime(MoveMixin):
             if self.objective_donut >= len(self.game.donuts) or not self.path:
                 self.maybe_fixate()
 
-            if len(self.path) >= 1:
-                step = self.path[0]
-                sx = step[0] + 0.25
-                sy = step[1] + 0.25
+            self.pre_move()
+            self.move()
+            self.post_move()
 
-                if sx > self.x:
-                    self.right = True
-                    self.left = False
-                elif sx < self.x:
-                    self.left = True
-                    self.right = False
-                else:
-                    self.left = False
-                    self.right = False
-                if sy > self.y:
-                    self.down = True
-                    self.up = False
-                elif sy < self.y:
-                    self.up = True
-                    self.down = False
-                else:
-                    self.down = False
-                    self.up = False
-                self.move()
-                if abs(self.x - sx) < self.speed and abs(self.y - sy) < self.speed:
-                    self.path = self.path[1:]
-
-    def splat(self):
-        self.alive = False
-        self.name = "splat"
-        self.despawn_at = datetime.datetime.now() + datetime.timedelta(0, 10)
+    def splat(self, player):
+        if player.desplat_at is None:
+            self.alive = False
+            self.name = "splat"
+            self.despawn_at = datetime.datetime.now() + datetime.timedelta(0, 10)
+            return True
+        return False
 
     def should_despawn(self):
         return (self.despawn_at is not None) and (self.despawn_at <= datetime.datetime.now())
+
+    def omnomnom(self, donut):
+        donut.omnomnom()
+        self.upgrade = True
+        return True
+
+    def maybe_upgrade(self):
+        if self.upgrade:
+            return EvilSlime(self)
+        return self
 
 class Player(MoveMixin):
     def __init__(self, game, player_id):
@@ -174,12 +257,31 @@ class Player(MoveMixin):
         self.right = False
         self.socket = None
         self.events = []
+        self.desplat_at = None
 
     def serialized_events(self):
         return "<%s>" % " ".join(self.events)
 
+    def splat(self):
+        if self.desplat_at is None:
+            self.facing = "splat"
+            self.up = False
+            self.down = False
+            self.left = False
+            self.right = False
+            self.desplat_at = datetime.datetime.now() + datetime.timedelta(0, 10)
+            return True
+        else:
+            return False
+
     def tick(self):
-        self.move()
+        if self.desplat_at is None:
+            self.move()
+
+        if (self.desplat_at is not None) and (self.desplat_at <= datetime.datetime.now()):
+            print "[%s]: desplat" % self.player_id
+            self.facing = "down"
+            self.desplat_at = None
 
 def within(thing, x, y):
     return ((x >= thing.x) and
@@ -312,19 +414,19 @@ class Game:
             if monster.alive:
                 for player in self.players.values():
                     if collided(monster, player):
-                        self.add_event("splat")
-                        monster.splat()
+                        if monster.splat(player):
+                            self.add_event("splat")
 
         ## eaten?
         for donut in self.donuts:
             for monster in self.monsters:
                 if monster.alive:
                     if collided(donut, monster):
-                        self.add_event("omnomnom")
-                        donut.omnomnom()
+                        if monster.omnomnom(donut):
+                            self.add_event("omnomnom")
 
         ## despawn
-        self.monsters = [m for m in self.monsters if not m.should_despawn()]
+        self.monsters = [m.maybe_upgrade() for m in self.monsters if not m.should_despawn()]
         self.donuts = [d for d in self.donuts if not d.should_despawn]
         self.maybe_game_over()
 
@@ -409,37 +511,43 @@ class PlayGameSocket(tornado.websocket.WebSocketHandler):
                 self.write_message('maze: %d %d %s' % (self.game.width,
                     self.game.height, self.game.serialized_maze()))
                 self.state = self.States.MAZE_SENT
+                return
         elif self.state == self.States.MAZE_SENT:
             if message == 'ack':
                 self.state = self.States.ACKED
                 if not self.game.loop:
                     self.game.loop = tornado.ioloop.PeriodicCallback(lambda: self.game.tick(), 16)
                     self.game.loop.start()
+                return
         elif self.state == self.States.ACK_WAIT:
             if message == 'ack':
                 self.state = self.States.ACKED
+                return
 
         if self.state == self.States.ACK_WAIT or self.state == self.States.ACKED:
-            if message == 'right':
-                self.player.right = True
-                self.player.facing = "right"
-            if message == '!right':
-                self.player.right = False
-            if message == 'left':
-                self.player.left = True
-                self.player.facing = "left"
-            if message == '!left':
-                self.player.left = False
-            if message == 'down':
-                self.player.down = True
-                self.player.facing = "down"
-            if message == '!down':
-                self.player.down = False
-            if message == 'up':
-                self.player.up = True
-                self.player.facing = "up"
-            if message == '!up':
-                self.player.up = False
+            if self.player.desplat_at is None:
+                print "[%s] move: %s" % (self.player.player_id, message)
+                if message == 'right':
+                    self.player.right = True
+                    self.player.facing = "right"
+                elif message == '!right':
+                    self.player.right = False
+                elif message == 'left':
+                    self.player.left = True
+                    self.player.facing = "left"
+                elif message == '!left':
+                    self.player.left = False
+                elif message == 'down':
+                    self.player.down = True
+                    self.player.facing = "down"
+                elif message == '!down':
+                    self.player.down = False
+                elif message == 'up':
+                    self.player.up = True
+                    self.player.facing = "up"
+                elif message == '!up':
+                    self.player.up = False
+                return
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):

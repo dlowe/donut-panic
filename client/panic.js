@@ -41,11 +41,18 @@ var game = (function () {
             "up": new Image(),
             "down": new Image(),
             "left": new Image(),
-            "right": new Image()
+            "right": new Image(),
+            "splat": new Image(),
         },
         "donut": new Image(),
         "monsters": {
             "slime": {
+                "up": new Image(),
+                "down": new Image(),
+                "left": new Image(),
+                "right": new Image()
+            },
+            "evilslime": {
                 "up": new Image(),
                 "down": new Image(),
                 "left": new Image(),
@@ -68,10 +75,15 @@ var game = (function () {
     sprites.player.down.src = "player_down.png";
     sprites.player.left.src = "player_left.png";
     sprites.player.right.src = "player_right.png";
+    sprites.player.splat.src = "player_splat.png";
     sprites.monsters.slime.up.src = "slime.png";
     sprites.monsters.slime.down.src = "slime.png";
     sprites.monsters.slime.left.src = "slime.png";
     sprites.monsters.slime.right.src = "slime.png";
+    sprites.monsters.evilslime.up.src = "evilslime.png";
+    sprites.monsters.evilslime.down.src = "evilslime.png";
+    sprites.monsters.evilslime.left.src = "evilslime.png";
+    sprites.monsters.evilslime.right.src = "evilslime.png";
     sprites.monsters.splat.up.src = "splat.png";
     sprites.monsters.splat.down.src = "splat.png";
     sprites.monsters.splat.left.src = "splat.png";
@@ -252,6 +264,7 @@ var game = (function () {
                                     });
                                     break;
                                 case "slime":
+                                case "evilslime":
                                 case "splat":
                                     monsters.push({
                                         name: type,
