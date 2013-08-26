@@ -225,8 +225,8 @@ class Game:
         self.players = {}
         self.monsters = []
         self.loop = None
-        self.width = 9
-        self.height = 5
+        self.width = 29
+        self.height = 19
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
@@ -311,9 +311,13 @@ class Game:
     def get_player(self, player_id):
         return self.players[player_id]
 
+ADJECTIVES = ["big", "red", "old"]
+NOUNS = ["pig", "cup", "fox"]
+
 class NewGameHandler(tornado.web.RequestHandler):
     def post(self):
-        game_id = "testing" ## XXX: randomize
+        game_id = "%s-%s-%d" % (random.choice(ADJECTIVES),
+                random.choice(NOUNS), random.randrange(10,100))
         print "new game %s" % game_id
         if not game_id in GAMES:
             GAMES[game_id] = Game(game_id)

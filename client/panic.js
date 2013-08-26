@@ -215,6 +215,24 @@ var game = (function () {
     }
 
     return {
+        new_game: function(cb) {
+                      $.ajax({
+                          'url': '/api/new-game',
+                          'type': 'POST',
+                          'success': function (data) {
+                              cb(data.game_id);
+                          }
+                      });
+                  },
+        join_game: function(game_id, cb) {
+                       $.ajax({
+                           'url': '/api/join-game/' + game_id,
+                           'type': 'POST',
+                           'success': function (data) {
+                               cb(data.game_id, data.player_id);
+                           }
+                       });
+                   },
         start: function(host, port, game_id, player_id, canvas_context) {
                    ctx = canvas_context;
                    ws = new WebSocket("ws://" + host + ":" + port
