@@ -4,8 +4,10 @@ var game = (function () {
     var States = {
         UNOPENED: 0,
         MAZE_WAIT: 1,
-        STARTED: 3
+        STARTED: 3,
+        CLOSED: 4
     };
+    var error_message = null;
     var state = States.UNOPENED;
     var maze = {
         height: null,
@@ -104,21 +106,32 @@ var game = (function () {
         if (gameover) {
             ctx.drawImage(sprites.gameover, 0, 0, 640, 480);
         }
+        if (state == States.CLOSED) {
+            ctx.fillStyle = "#FF0000";
+            ctx.font = "30px Courier";
+            ctx.fillText(error_message, 20, 200);
+        }
     };
+
+    var send = function(msg) {
+        if (state != States.CLOSED) {
+            ws.send(msg);
+        }
+    }
 
     var keydown = function(e) {
         switch (e.keyCode) {
             case 37:
-                ws.send("left");
+                send("left");
                 break;
             case 38:
-                ws.send("up");
+                send("up");
                 break;
             case 39:
-                ws.send("right");
+                send("right");
                 break;
             case 40:
-                ws.send("down");
+                send("down");
                 break;
         };
     };
@@ -126,19 +139,27 @@ var game = (function () {
     var keyup = function(e) {
         switch (e.keyCode) {
             case 37:
-                ws.send("!left");
+                send("!left");
                 break;
             case 38:
-                ws.send("!up");
+                send("!up");
                 break;
             case 39:
-                ws.send("!right");
+                send("!right");
                 break;
             case 40:
-                ws.send("!down");
+                send("!down");
                 break;
         };
     }
+
+    var error = function(err) {
+        state = States.CLOSED;
+        sounds["bg"].pause();
+        $(document).keydown(null);
+        $(document).keyup(null);
+        error_message = err;
+    };
 
     var message = function(msg) {
         switch (state) {
@@ -272,6 +293,9 @@ var game = (function () {
                    ctx = canvas_context;
                    ws = new WebSocket("ws://" + host + ":" + port
                            + "/play-game/" + game_id + "/" + player_id);
+                   ws.onclose = function () {
+                       error("Connection Lost");
+                   }
                    ws.onopen = function() {
                        ws.send("ready");
                        state = States.MAZE_WAIT;
