@@ -241,9 +241,10 @@ class Slime(MoveMixin, PathMixin):
         return self
 
 class Player(MoveMixin):
-    def __init__(self, game, player_id):
+    def __init__(self, game, player_id, nick):
         self.game = game
         self.player_id = player_id
+        self.nick = nick
         self.x, self.y = self.game.random_empty_spot()
         self.x += 0.25
         self.y += 0.25
@@ -347,10 +348,10 @@ class Game:
 
     def serialized_state(self, player_id):
         return "<%s>" % " ".join(
-            ["(%s:%f,%f,%s)" % ("you" if p.player_id == player_id else "other",
-                p.x, p.y, p.facing) for p in self.players.values() if p.socket is not None] +
-            ["(donut:%f,%f,_)" % (d.x, d.y) for d in self.donuts] +
-            ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
+            ["(%s:%f,%f,%s,%s)" % ("you" if p.player_id == player_id else "other",
+                p.x, p.y, p.facing, p.nick) for p in self.players.values() if p.socket is not None] +
+            ["(donut:%f,%f,_,_)" % (d.x, d.y) for d in self.donuts] +
+            ["(%s:%f,%f,%s,_)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
     def serialized_point(self, x, y):
         if self.walls[y][x]:
@@ -435,8 +436,8 @@ class Game:
             if player.socket is not None:
                 player.socket.maybe_send_player()
 
-    def add_player(self, player_id):
-        self.players[player_id] = Player(self, player_id)
+    def add_player(self, player_id, nick):
+        self.players[player_id] = Player(self, player_id, nick)
         self.add_event("oink")
 
     def get_player(self, player_id):
@@ -464,8 +465,9 @@ class NewGameHandler(tornado.web.RequestHandler):
 class JoinGameHandler(tornado.web.RequestHandler):
     def post(self, game_id):
         print "[%s] join game" % game_id
+        nick = self.get_argument("nick").replace(" ", "_")
         player_id = str(uuid.uuid4())
-        GAMES[game_id].add_player(player_id)
+        GAMES[game_id].add_player(player_id, nick)
         self.set_header("Content-Type", "application/json")
         self.write({
             "game_id": game_id,

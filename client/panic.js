@@ -19,7 +19,8 @@ var game = (function () {
     var player = {
         x: null,
         y: null,
-        facing: null
+        facing: null,
+        nick: null
     };
     var monsters = [];
     var donuts = [];
@@ -114,9 +115,13 @@ var game = (function () {
             ctx.drawImage(sprites.monsters[monster.name][monster.facing], monster.x*32 - off_x, monster.y*32 - off_y, 16, 16);
         }
         ctx.drawImage(sprites.player[player.facing], player.x*32 - off_x, player.y*32 - off_y, 16, 16);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "8px Courier";
+        ctx.fillText(player.nick, player.x*32 - off_x, player.y*32 - off_y + 25);
         for (var i = 0; i < others.length; ++i) {
             var other = others[i];
             ctx.drawImage(sprites.player[other.facing], other.x*32 - off_x, other.y*32 - off_y, 16, 16);
+            ctx.fillText(other.nick, other.x*32 - off_x, other.y*32 - off_y + 25);
         }
         if (gameover) {
             ctx.drawImage(sprites.gameover, 0, 0, 640, 480);
@@ -248,17 +253,19 @@ var game = (function () {
                     monsters = [];
                     donuts = [];
                     for (var i = 0; i < packets.length; ++i) {
-                        var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),(.*)\)$/;
+                        var packet_pattern = /^\((.*):(-?[\d.]+),(-?[\d.]+),([^,]*),(.*)\)$/;
                         if (p_result = packet_pattern.exec(packets[i])) {
                             var type = p_result[1];
                             var x = parseFloat(p_result[2]);
                             var y = parseFloat(p_result[3]);
                             var facing = p_result[4];
+                            var nick = p_result[5];
                             switch (type) {
                                 case "you":
                                     player.x = x;
                                     player.y = y;
                                     player.facing = facing;
+                                    player.nick = nick;
                                     break;
                                 case "donut":
                                     donuts.push({
@@ -281,7 +288,8 @@ var game = (function () {
                                         name: type,
                                         x: x,
                                         y: y,
-                                        facing: facing
+                                        facing: facing,
+                                        nick: nick
                                     });
                                     break;
                             };
@@ -317,10 +325,13 @@ var game = (function () {
                           }
                       });
                   },
-        join_game: function(game_id, cb) {
+        join_game: function(game_id, nick, cb) {
                        $.ajax({
                            'url': '/api/join-game/' + game_id,
                            'type': 'POST',
+                           'data': {
+                               'nick': nick
+                           },
                            'success': function (data) {
                                cb(data.game_id, data.player_id);
                            }
