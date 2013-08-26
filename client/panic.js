@@ -30,7 +30,8 @@ var game = (function () {
         "splat": new Audio("splat.ogg"),
         "omnomnom": new Audio("omnomnom.ogg"),
         "oink": new Audio("oink.ogg"),
-        "spawn": new Audio("spawn.ogg")
+        "spawn": new Audio("spawn.ogg"),
+        "crash": new Audio("crash.ogg")
     }
     var sprites = {
         "gameover": new Image(),
@@ -189,6 +190,8 @@ var game = (function () {
         error_message = err;
         console.log(err);
         stop();
+        sounds["crash"].load();
+        sounds["crash"].play();
         requestAnimationFrame(repaint);
     };
 
@@ -211,7 +214,6 @@ var game = (function () {
                             maze.spawners[x][y] = result[3].charAt(y * maze.width + x) == 's';
                         }
                     }
-                    console.log(maze.walls);
                     send("ack");
                     state = States.STARTED;
                     // start music
