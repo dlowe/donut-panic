@@ -5,28 +5,35 @@
         <body style="background-color:black; overflow:hidden;">
                 <div id="container" style="position: relative; margin: 0px auto; width: 640px;">
                 <div id="intro" style="position: absolute; top: 0; left: 0; background-color:white; background-image:url('splash.png'); width:640px; height:480px">
-                            <div id="left" style="position: absolute; height: 140px; width:320px; top:340px; padding-left:10px;">
-                                <label for="nick">your nick</label>
+                            <div id="topright" style="position: absolute; height: 50px; width:280px; top:310px; left:360px; padding-left:10px;">
+                                <label for="nick" style="color:white;">nickname</label><br>
                                 <input type="text" id="nick" name="width" value=""><br>
-
-                                <label for="width">maze width</label>
-                                <input type="range" id="width" name="width" value="29" min="21" max="51" step="2"><br>
-
-                                <label for="height">maze height</label>
-                                <input type="range" id="height" name="height" value="19" min="15" max="51" step="2"><br>
-
-                                <label for="n_donuts">#donuts</label>
-                                <input type="range" id="n_donuts" name="n_donuts" value="5" min="2" max="10" step="1"><br>
-
-                                <label for="n_spawners">#spawners</label>
-                                <input type="range" id="n_spawners" name="n_spawners" value="4" min="2" max="10" step="1"><br>
-                                <button id="mp_create">Make Multiplayer Game</button>
                             </div>
-                            <div id="right" style="position: absolute; height: 140px; width:320px; top: 340px; left: 320px;">
-                                <button id="single">Singleplayer</button><br>
-                                <button id="mp_join">Multiplayer</button><br>
+                            <div id="left" style="position: absolute; height: 110px; width:260px; top:310px; padding-left:40px;">
+                                <div style="padding-top: 50px;">
+                                <label for="width" style="float: left;">maze width</label>
+                                <input type="range" id="width" name="width" value="29" min="21" max="51" step="2" style="float: right;"><br>
 
-                                <textarea rows=1 cols="10" id="mp_game_id"></textarea>
+                                <label for="height" style="float: left;">maze height</label>
+                                <input type="range" id="height" name="height" value="19" min="15" max="51" step="2" style="float: right;"><br>
+
+                                <label for="n_donuts" style="float: left;">#donuts</label>
+                                <input type="range" id="n_donuts" name="n_donuts" value="5" min="2" max="10" step="1" style="float: right;"><br>
+
+                                <label for="n_spawners" style="float: left;">#spawners</label>
+                                <input type="range" id="n_spawners" name="n_spawners" value="4" min="2" max="10" step="1" style="float: right;"><br>
+                                </div>
+
+                                <br>
+                                <button id="mp_create" style="float: right; background-color:red; border-style: dotted; border-width: 1px;">make multiplayer game</button>
+                            </div>
+                            <div id="right" style="position: absolute; height: 120px; width:280px; top: 360px; left: 360px; padding-left: 10px;">
+                                <button id="single" style="width: 130px; height: 30px; background-color:#7dff00; margin-bottom: 1px; border-style: dotted; border-width: 1px;">singleplayer</button><br>
+                                <button id="mp_join" style="width: 130px; height: 30px; background-color:red; border-style: dotted; border-width: 1px;">multiplayer</button><br>
+                            </div>
+                            <div id="bottomright" style="position: absolute; width: 280px; top: 430px; left: 360px; padding-left: 10px;">
+                                <label for="mp_game_id" style="color:white;">game id (share me!)</label><br>
+                                <input type="text" id="mp_game_id" value=""></textarea>
                             </div>
                 </div>
                 <canvas id="viewport" width=640 height=480 style="background-color: white; position: absolute; top: 0; left: 0;">
