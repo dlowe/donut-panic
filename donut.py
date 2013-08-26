@@ -265,6 +265,8 @@ class Game:
     def maybe_spawn(self):
         now = datetime.datetime.now()
         if self.last_spawn is None or ((now - self.last_spawn).total_seconds() >= 10):
+            if self.last_spawn is not None:
+                self.add_event("spawn")
             self.monsters.append(Slime(self, random.choice(self.spawners)))
             self.last_spawn = now
 

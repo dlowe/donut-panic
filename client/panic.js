@@ -23,9 +23,11 @@ var game = (function () {
     var others = [];
     var gameover = false;
     var sounds = {
+        "bg": new Audio("bg.ogg"),
         "splat": new Audio("splat.ogg"),
         "omnomnom": new Audio("omnomnom.ogg"),
-        "oink": new Audio("oink.ogg")
+        "oink": new Audio("oink.ogg"),
+        "spawn": new Audio("spawn.ogg")
     }
     var sprites = {
         "gameover": new Image(),
@@ -160,6 +162,10 @@ var game = (function () {
                     console.log(maze.walls);
                     ws.send("ack");
                     state = States.STARTED;
+                    // start music
+                    sounds["bg"].load();
+                    sounds["bg"].loop = true;
+                    sounds["bg"].play();
                     // start paying attention to keyboard events
                     $(document).keydown(keydown);
                     $(document).keyup(keyup);
@@ -171,6 +177,9 @@ var game = (function () {
                 var state_pattern = /^state:\s*((gameover)?)<(.*)><(.*)>$/;
                 if (result = state_pattern.exec(msg)) {
                     gameover = result[2] === "gameover";
+                    if (gameover) {
+                        sounds["bg"].pause();
+                    }
                     var events = result[3].split(" ");
                     for (var i = 0; i < events.length; ++i) {
                         if (events[i] !== "") {
