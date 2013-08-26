@@ -179,6 +179,16 @@ var game = (function () {
                 saying = "";
                 $(document).unbind("keypress");
                 $(document).unbind("keydown");
+                $(document).keydown(function (e) {
+                    switch (e.keyCode) {
+                        case 8:
+                            if (saying) {
+                                saying = saying.substr(0, saying.length - 1);
+                            }
+                            e.preventDefault();
+                            break;
+                    }
+                });
                 $(document).keypress(function (e) {
                     switch (e.keyCode) {
                         case 13:
@@ -186,6 +196,7 @@ var game = (function () {
                             saying = null;
                             $(document).unbind("keypress");
                             $(document).keypress(keypress);
+                            $(document).unbind("keydown");
                             $(document).keydown(keydown);
                             break;
                         default:
@@ -193,7 +204,6 @@ var game = (function () {
                             break;
                     };
                 });
-                // $(document).unbind("keyup");
                 break;
         }
     }
