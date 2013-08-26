@@ -11,6 +11,7 @@ var game = (function () {
         height: null,
         width: null,
         walls: null,
+        spawners: null
     };
     var player = {
         x: null,
@@ -29,6 +30,7 @@ var game = (function () {
     var sprites = {
         "gameover": new Image(),
         "wall": new Image(),
+        "spawner": new Image(),
         "floor": new Image(),
         "player": {
             "up": new Image(),
@@ -54,6 +56,7 @@ var game = (function () {
     }
     sprites.gameover.src = "gameover.png";
     sprites.wall.src = "wall.png";
+    sprites.spawner.src = "spawner.png";
     sprites.floor.src = "floor.png";
     sprites.donut.src = "donut.png";
     sprites.player.up.src = "player_up.png";
@@ -78,6 +81,8 @@ var game = (function () {
                 ctx.drawImage(sprites.floor, x*32 - off_x, y*32 - off_y, 32, 32);
                 if (maze.walls[x][y]) {
                     ctx.drawImage(sprites.wall, x*32 - off_x, y*32 - off_y, 32, 32);
+                } else if (maze.spawners[x][y]) {
+                    ctx.drawImage(sprites.spawner, x*32 - off_x, y*32 - off_y, 32, 32);
                 }
             }
         }
@@ -141,12 +146,15 @@ var game = (function () {
                     maze.width = parseInt(result[1]);
                     maze.height = parseInt(result[2]);
                     maze.walls = [];
+                    maze.spawners = [];
                     for (var x = 0; x < maze.width; ++x) {
                         maze.walls[x] = [];
+                        maze.spawners[x] = [];
                     }
                     for (var y = 0; y < maze.height; ++y) {
                         for (var x = 0; x < maze.width; ++x) {
                             maze.walls[x][y] = result[3].charAt(y * maze.width + x) == 'x';
+                            maze.spawners[x][y] = result[3].charAt(y * maze.width + x) == 's';
                         }
                     }
                     console.log(maze.walls);

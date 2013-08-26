@@ -90,13 +90,14 @@ class MoveMixin:
         self.y = y
 
 class Slime(MoveMixin):
-    def __init__(self, game):
+    def __init__(self, game, spawner):
         self.game = game
         self.name = "slime"
-        self.x, self.y = self.game.random_empty_spot()
-        self.maybe_fixate()
+        self.x = spawner.x
+        self.y = spawner.y
         self.x += 0.25
         self.y += 0.25
+        self.maybe_fixate()
         self.speed = 0.04
         self.width = 0.5 # blocks
         self.height = 0.5 # blocks
@@ -223,6 +224,12 @@ class Donut:
     def omnomnom(self):
         self.should_despawn = True
 
+class Spawner:
+    def __init__(self, coords):
+        self.x, self.y = coords
+        self.width = 1.0
+        self.height = 1.0
+
 class Game:
     def __init__(self, game_id):
         self.game_id = game_id
@@ -234,6 +241,7 @@ class Game:
         self.last_spawn = None
         self.walls = make_maze(self.width, self.height)
         self.donuts = [Donut(self.random_empty_spot()) for _ in range(5)]
+        self.spawners = [Spawner(self.random_empty_spot()) for _ in range(3)]
         self.gameover = False
 
     def serialized_state(self, player_id):
@@ -243,13 +251,21 @@ class Game:
             ["(donut:%f,%f,_)" % (d.x, d.y) for d in self.donuts] +
             ["(%s:%f,%f,%s)" % (m.name, m.x, m.y, m.facing) for m in self.monsters])
 
+    def serialized_point(self, x, y):
+        if self.walls[y][x]:
+            return "x"
+        elif [True for s in self.spawners if s.x == x and s.y == y]:
+            return "s"
+        else:
+            return " "
+
     def serialized_maze(self):
-        return "".join(["x" if self.walls[y][x] else " " for y in range(0, self.height) for x in range(0,self.width)])
+        return "".join([self.serialized_point(x, y) for y in range(0, self.height) for x in range(0,self.width)])
 
     def maybe_spawn(self):
         now = datetime.datetime.now()
         if self.last_spawn is None or ((now - self.last_spawn).total_seconds() >= 10):
-            self.monsters.append(Slime(self))
+            self.monsters.append(Slime(self, random.choice(self.spawners)))
             self.last_spawn = now
 
     def maybe_stop(self):
