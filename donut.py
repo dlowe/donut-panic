@@ -408,38 +408,36 @@ class Game:
             player.events.append(event)
 
     def tick(self):
-        if self.gameover:
-            return
+        if not self.gameover:
+            ## spawn
+            self.maybe_spawn()
 
-        ## spawn
-        self.maybe_spawn()
+            ## move everything
+            for player in self.players.values():
+                player.tick()
+            for monster in self.monsters:
+                monster.tick()
 
-        ## move everything
-        for player in self.players.values():
-            player.tick()
-        for monster in self.monsters:
-            monster.tick()
-
-        ## squished?
-        for monster in self.monsters:
-            if monster.alive:
-                for player in self.players.values():
-                    if collided(monster, player):
-                        if monster.splat(player):
-                            self.add_event("splat")
-
-        ## eaten?
-        for donut in self.donuts:
+            ## squished?
             for monster in self.monsters:
                 if monster.alive:
-                    if collided(donut, monster):
-                        if monster.omnomnom(donut):
-                            self.add_event("omnomnom")
+                    for player in self.players.values():
+                        if collided(monster, player):
+                            if monster.splat(player):
+                                self.add_event("splat")
 
-        ## despawn
-        self.monsters = [m.maybe_upgrade() for m in self.monsters if not m.should_despawn()]
-        self.donuts = [d for d in self.donuts if not d.should_despawn]
-        self.maybe_game_over()
+            ## eaten?
+            for donut in self.donuts:
+                for monster in self.monsters:
+                    if monster.alive:
+                        if collided(donut, monster):
+                            if monster.omnomnom(donut):
+                                self.add_event("omnomnom")
+
+            ## despawn
+            self.monsters = [m.maybe_upgrade() for m in self.monsters if not m.should_despawn()]
+            self.donuts = [d for d in self.donuts if not d.should_despawn]
+            self.maybe_game_over()
 
         ## send updates
         for player in self.players.values():
